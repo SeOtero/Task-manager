@@ -181,7 +181,7 @@ Today I've worked on the following tasks:\n${formattedReport.join('\n')}`;
       return (
         <div className="max-w-xl w-full bg-white rounded-2xl shadow-xl p-8 space-y-6">
           <h1 className="text-4xl font-extrabold text-gray-800 text-center">
-            Gestor de Tareas Personal
+           
           </h1>
           {/* Task input section */}
           <form onSubmit={addTask} className="flex items-center gap-2">
@@ -201,17 +201,17 @@ Today I've worked on the following tasks:\n${formattedReport.join('\n')}`;
             </button>
           </form>
 
-          {/* Task list section */}
+          {/* Task Manager para TL list section */}
           <div className="space-y-4">
-            {tasks.length > 0 ? (
-              tasks.map((task) => (
-                <div key={task.id} className="flex items-center justify-between bg-gray-50 p-5 rounded-xl shadow-md">
+            {Task Manager para TLs.length > 0 ? (
+              Task Manager para TLs.map((Task Manager para TL) => (
+                <div key={Task Manager para TL.id} className="flex items-center justify-between bg-gray-50 p-5 rounded-xl shadow-md">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4">
                     <span className="font-medium text-gray-700 text-lg">
-                      {task.name}
+                      {Task Manager para TL.name}
                     </span>
                     <span className="font-mono text-xl text-gray-600">
-                      {formatTime(task.elapsedTime)}
+                      {formatTime(Task Manager para TL.elapsedTime)}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -276,3 +276,4 @@ Today I've worked on the following tasks:\n${formattedReport.join('\n')}`;
   </script>
 </body>
 </html>
+
