@@ -24,10 +24,13 @@
     const App = () => {
       const [tasks, setTasks] = useState([]);
       const [taskInput, setTaskInput] = useState('');
+      const [orderQuantity, setOrderQuantity] = useState('');
       const [reportOutput, setReportOutput] = useState('');
       const [pastReports, setPastReports] = useState([]);
       const [editingTaskId, setEditingTaskId] = useState(null);
       const [editingTime, setEditingTime] = useState('');
+      const [editingQuantityId, setEditingQuantityId] = useState(null);
+      const [editingQuantity, setEditingQuantity] = useState('');
 
       const taskOptions = [
         "Columna CONFIRMADO",
@@ -122,6 +125,16 @@
         }
       };
 
+      const handleQuantityEdit = (id, quantity) => {
+        const newQuantity = parseInt(quantity);
+        setTasks(prevTasks =>
+          prevTasks.map(task =>
+            task.id === id ? { ...task, quantity: newQuantity || null } : task
+          )
+        );
+        setEditingQuantityId(null);
+      };
+
       const addTask = (e) => {
         e.preventDefault();
         if (!taskInput.trim()) return;
@@ -129,12 +142,14 @@
         const newTask = {
           id: Date.now(),
           name: taskInput.trim(),
+          quantity: orderQuantity ? parseInt(orderQuantity) : null,
           elapsedTime: 0,
           running: false,
           lastTime: null
         };
         setTasks(prevTasks => [...prevTasks, newTask]);
         setTaskInput('');
+        setOrderQuantity('');
         setReportOutput('');
       };
 
@@ -175,8 +190,9 @@
           const hours = Math.floor(totalSeconds / 3600);
           const minutes = Math.floor((totalSeconds % 3600) / 60);
           const timeString = `${hours}h ${minutes}m`;
+          const quantityText = task.quantity ? ` (${task.quantity} orders)` : '';
           
-          return `${task.name}: ${timeString}`;
+          return `${task.name}${quantityText}: ${timeString}`;
         });
 
         const totalSeconds = Math.floor(totalMilliseconds / 1000);
@@ -218,8 +234,8 @@ Today I worked on the following tasks:\n${formattedReport.join('\n')}`;
             Task manager TL
           </h1>
           {/* Task input section */}
-          <form onSubmit={addTask} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-            <div className="flex-1 flex flex-col sm:flex-row gap-2 w-full">
+          <form onSubmit={addTask} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2 w-full">
               <select
                 value={taskInput}
                 onChange={(e) => setTaskInput(e.target.value)}
@@ -231,6 +247,13 @@ Today I worked on the following tasks:\n${formattedReport.join('\n')}`;
                   <option key={option} value={option}>{option}</option>
                 ))}
               </select>
+              <input
+                type="number"
+                value={orderQuantity}
+                onChange={(e) => setOrderQuantity(e.target.value)}
+                placeholder="Quantity (optional)"
+                className="flex-1 px-5 py-3 border-2 border-gray-600 bg-gray-700 text-white rounded-full focus:outline-none focus:ring-4 focus:ring-blue-500 transition-all"
+              />
             </div>
             <button
               type="submit"
@@ -249,6 +272,33 @@ Today I worked on the following tasks:\n${formattedReport.join('\n')}`;
                     <span className="font-medium text-gray-300 text-lg">
                       {task.name}
                     </span>
+                    {/* Quantity display with edit functionality */}
+                    {editingQuantityId === task.id ? (
+                      <input
+                        type="number"
+                        value={editingQuantity}
+                        onChange={(e) => setEditingQuantity(e.target.value)}
+                        onBlur={() => handleQuantityEdit(task.id, editingQuantity)}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleQuantityEdit(task.id, editingQuantity);
+                          }
+                        }}
+                        className="font-mono text-xl text-gray-400 border-b-2 border-blue-500 bg-gray-700 focus:outline-none w-20"
+                      />
+                    ) : (
+                      <span
+                        className="font-mono text-lg text-gray-400 cursor-pointer"
+                        onClick={() => {
+                          setEditingQuantityId(task.id);
+                          setEditingQuantity(task.quantity || '');
+                        }}
+                      >
+                        {task.quantity ? `${task.quantity} orders` : '(no quantity)'}
+                      </span>
+                    )}
+
                     {/* Time display with edit functionality */}
                     {editingTaskId === task.id ? (
                       <input
