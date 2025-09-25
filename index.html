@@ -152,8 +152,8 @@
         
         const currentDate = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-        const reportContent = `End of Day Report: ${currentDate}
-          Hours worked: ${totalTimeString}
+        const reportContent = `End of Day Report:
+          Hours worked: ${totalTimeString}.
           Today I've worked on the following tasks:\n${formattedReport.join('\n')}`;
 
         setReportOutput(reportContent);
@@ -245,7 +245,7 @@
               onClick={generateReport}
               className="bg-purple-600 text-white px-6 py-3 rounded-full font-semibold hover:bg-purple-700 transition duration-300 shadow-lg mb-4"
             >
-              Generar Reporte del Día
+              Generar E.O.D.R.
             </button>
             <div className="w-full bg-gray-50 rounded-xl p-5 font-mono text-sm text-gray-800 whitespace-pre-wrap">
               {reportOutput || 'El informe del día se mostrará aquí...'}
@@ -276,3 +276,4 @@
   </script>
 </body>
 </html>
+
