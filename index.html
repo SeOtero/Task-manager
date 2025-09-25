@@ -26,6 +26,8 @@
       const [taskInput, setTaskInput] = useState('');
       const [reportOutput, setReportOutput] = useState('');
       const [pastReports, setPastReports] = useState([]);
+      const [editingTaskId, setEditingTaskId] = useState(null);
+      const [editingTime, setEditingTime] = useState('');
 
       // Load data from localStorage on initial render
       useEffect(() => {
@@ -87,6 +89,20 @@
         const seconds = totalSeconds % 60;
         const pad = (num) => String(num).padStart(2, '0');
         return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+      };
+
+      // New function to handle manual time edits
+      const handleTimeEdit = (id, time) => {
+        const parts = time.split(':').map(Number);
+        if (parts.length === 3 && !parts.some(isNaN)) {
+          const totalMs = (parts[0] * 3600 + parts[1] * 60 + parts[2]) * 1000;
+          setTasks(prevTasks =>
+            prevTasks.map(task =>
+              task.id === id ? { ...task, elapsedTime: totalMs } : task
+            )
+          );
+          setEditingTaskId(null);
+        }
       };
 
       const addTask = (e) => {
@@ -152,9 +168,9 @@
         
         const currentDate = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-        const reportContent = `End of Day Report:
-          Hours worked: ${totalTimeString}.
-          Today I've worked on the following tasks:\n${formattedReport.join('\n')}`;
+        const reportContent = `End of Day Report: ${currentDate}
+Hours worked: ${totalTimeString}
+Today I've worked on the following tasks:\n${formattedReport.join('\n')}`;
 
         setReportOutput(reportContent);
 
@@ -210,9 +226,32 @@
                     <span className="font-medium text-gray-700 text-lg">
                       {task.name}
                     </span>
-                    <span className="font-mono text-xl text-gray-600">
-                      {formatTime(task.elapsedTime)}
-                    </span>
+                    {/* Time display with edit functionality */}
+                    {editingTaskId === task.id ? (
+                      <input
+                        type="text"
+                        value={editingTime}
+                        onChange={(e) => setEditingTime(e.target.value)}
+                        onBlur={() => handleTimeEdit(task.id, editingTime)}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleTimeEdit(task.id, editingTime);
+                          }
+                        }}
+                        className="font-mono text-xl text-gray-600 border-b-2 border-blue-500 focus:outline-none"
+                      />
+                    ) : (
+                      <span
+                        className="font-mono text-xl text-gray-600 cursor-pointer"
+                        onClick={() => {
+                          setEditingTaskId(task.id);
+                          setEditingTime(formatTime(task.elapsedTime));
+                        }}
+                      >
+                        {formatTime(task.elapsedTime)}
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <button
@@ -276,4 +315,3 @@
   </script>
 </body>
 </html>
-
