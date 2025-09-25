@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task Manager TL</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    const App = () => {
+      const [tasks, setTasks] = useState([]);
+      const [taskInput, setTaskInput] = useState('');
+      const [reportOutput, setReportOutput] = useState('');
+      const [pastReports, setPastReports] = useState([]);
+
+      // Load data from localStorage on initial render
+      useEffect(() => {
+        try {
+          const savedTasks = JSON.parse(localStorage.getItem('tasks'));
+          if (savedTasks) {
+            setTasks(savedTasks);
+          }
+          const savedReports = JSON.parse(localStorage.getItem('reports'));
+          if (savedReports) {
+            setPastReports(savedReports);
+          }
+        } catch (e) {
+          console.error("Error loading from localStorage", e);
+        }
+      }, []);
+
+      // Save tasks to localStorage whenever they change
+      useEffect(() => {
+        try {
+          localStorage.setItem('tasks', JSON.stringify(tasks));
+        } catch (e) {
+          console.error("Error saving tasks to localStorage", e);
+        }
+      }, [tasks]);
+
+      // Save reports to localStorage whenever they change
+      useEffect(() => {
+        try {
+          localStorage.setItem('reports', JSON.stringify(pastReports));
+        } catch (e) {
+          console.error("Error saving reports to localStorage", e);
+        }
+      }, [pastReports]);
+
+      // Timer update loop
+      useEffect(() => {
+        const timerInterval = setInterval(() => {
+          setTasks(currentTasks =>
+            currentTasks.map(task => {
+              if (task.running) {
+                const currentTime = Date.now();
+                const currentElapsed = task.elapsedTime + (currentTime - task.lastTime);
+                return { ...task, elapsedTime: currentElapsed, lastTime: currentTime };
+              }
+              return task;
+            })
+          );
+        }, 1000);
+
+        return () => clearInterval(timerInterval);
+      }, []);
+
+      const formatTime = (ms) => {
+        if (ms < 0) return '00:00:00';
+        const totalSeconds = Math.floor(ms / 1000);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        const pad = (num) => String(num).padStart(2, '0');
+        return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+      };
+
+      const addTask = (e) => {
+        e.preventDefault();
+        if (!taskInput.trim()) return;
+
+        const newTask = {
+          id: Date.now(),
+          name: taskInput.trim(),
+          elapsedTime: 0,
+          running: false,
+          lastTime: null
+        };
+        setTasks(prevTasks => [...prevTasks, newTask]);
+        setTaskInput('');
+        setReportOutput('');
+      };
+
+      const toggleTimer = (id) => {
+        setTasks(prevTasks =>
+          prevTasks.map(task => {
+            // Stop any other running timer
+            if (task.running && task.id !== id) {
+              return { ...task, running: false, elapsedTime: task.elapsedTime + (Date.now() - task.lastTime), lastTime: null };
+            }
+            // Toggle the selected task
+            if (task.id === id) {
+              const newRunningState = !task.running;
+              const newElapsedTime = newRunningState ? task.elapsedTime : task.elapsedTime + (Date.now() - task.lastTime);
+              return {
+                ...task,
+                running: newRunningState,
+                elapsedTime: newElapsedTime,
+                lastTime: newRunningState ? Date.now() : null,
+              };
+            }
+            return task;
+          })
+        );
+      };
+
+      const deleteTask = (id) => {
+        setTasks(prevTasks => prevTasks.filter(task => task.id !== id));
+        setReportOutput('');
+      };
+
+      const generateReport = () => {
+        let totalMilliseconds = 0;
+        const formattedReport = tasks.map(task => {
+          const finalTime = task.running ? task.elapsedTime + (Date.now() - task.lastTime) : task.elapsedTime;
+          totalMilliseconds += finalTime;
+          const totalSeconds = Math.floor(finalTime / 1000);
+          const hours = Math.floor(totalSeconds / 3600);
+          const minutes = Math.floor((totalSeconds % 3600) / 60);
+          const timeString = `${hours}h ${minutes}m`;
+          return `${task.name}: ${timeString}`;
+        });
+
+        const totalSeconds = Math.floor(totalMilliseconds / 1000);
+        const totalHours = Math.floor(totalSeconds / 3600);
+        const totalMinutes = Math.floor((totalSeconds % 3600) / 60);
+        const totalTimeString = `${totalHours}h ${totalMinutes}m`;
+        
+        const currentDate = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+        const reportContent = `End of Day Report: ${currentDate}
+Hours worked: ${totalTimeString}
+Today I've worked on the following tasks:\n${formattedReport.join('\n')}`;
+
+        setReportOutput(reportContent);
+
+        // Save report to past reports
+        const reportDocId = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+        const newReport = {
+          id: reportDocId,
+          date: new Date().toISOString(),
+          content: reportContent
+        };
+
+        setPastReports(prevReports => {
+          // Find and replace if report for today already exists
+          const existingReportIndex = prevReports.findIndex(report => report.id === reportDocId);
+          if (existingReportIndex > -1) {
+            const updatedReports = [...prevReports];
+            updatedReports[existingReportIndex] = newReport;
+            return updatedReports;
+          }
+          return [...prevReports, newReport].sort((a, b) => b.id.localeCompare(a.id));
+        });
+      };
+
+      return (
+        <div className="max-w-xl w-full bg-white rounded-2xl shadow-xl p-8 space-y-6">
+          <h1 className="text-4xl font-extrabold text-gray-800 text-center">
+            Gestor de Tareas Personal
+          </h1>
+          {/* Task input section */}
+          <form onSubmit={addTask} className="flex items-center gap-2">
+            <input
+              type="text"
+              value={taskInput}
+              onChange={(e) => setTaskInput(e.target.value)}
+              placeholder="Nombre de la tarea"
+              className="flex-1 px-5 py-3 border-2 border-gray-300 rounded-full focus:outline-none focus:ring-4 focus:ring-blue-500 transition-all"
+              required
+            />
+            <button
+              type="submit"
+              className="bg-blue-600 text-white px-6 py-3 rounded-full font-semibold hover:bg-blue-700 transition duration-300 shadow-lg"
+            >
+              Agregar Tarea
+            </button>
+          </form>
+
+          {/* Task list section */}
+          <div className="space-y-4">
+            {tasks.length > 0 ? (
+              tasks.map((task) => (
+                <div key={task.id} className="flex items-center justify-between bg-gray-50 p-5 rounded-xl shadow-md">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4">
+                    <span className="font-medium text-gray-700 text-lg">
+                      {task.name}
+                    </span>
+                    <span className="font-mono text-xl text-gray-600">
+                      {formatTime(task.elapsedTime)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => toggleTimer(task.id)}
+                      className={`px-5 py-2 rounded-full text-white font-semibold transition duration-300 shadow-md ${task.running ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'}`}
+                    >
+                      {task.running ? 'Parar' : 'Iniciar'}
+                    </button>
+                    <button
+                      onClick={() => deleteTask(task.id)}
+                      className="p-3 text-gray-400 hover:text-red-500 transition duration-300"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 112 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-center text-gray-500 italic">No hay tareas aún. Agrega una para empezar.</p>
+            )}
+          </div>
+
+          <hr className="border-t border-gray-300" />
+
+          {/* Report section */}
+          <div className="flex flex-col items-center">
+            <button
+              onClick={generateReport}
+              className="bg-purple-600 text-white px-6 py-3 rounded-full font-semibold hover:bg-purple-700 transition duration-300 shadow-lg mb-4"
+            >
+              Generar Reporte del Día
+            </button>
+            <div className="w-full bg-gray-50 rounded-xl p-5 font-mono text-sm text-gray-800 whitespace-pre-wrap">
+              {reportOutput || 'El informe del día se mostrará aquí...'}
+            </div>
+          </div>
+
+          {/* Past Reports Section */}
+          <hr className="border-t border-gray-300" />
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold text-center text-gray-800">Historial de Reportes</h2>
+            {pastReports.length > 0 ? (
+              pastReports.map((report) => (
+                <div key={report.id} className="bg-gray-50 rounded-xl p-5 shadow-md">
+                  <pre className="font-mono text-sm text-gray-800 whitespace-pre-wrap">
+                    {report.content}
+                  </pre>
+                </div>
+              ))
+            ) : (
+              <p className="text-center text-gray-500 italic">No hay reportes anteriores.</p>
+            )}
+          </div>
+        </div>
+      );
+    };
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>
