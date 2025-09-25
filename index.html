@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,7 +14,7 @@
     }
   </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+<body class="bg-gray-900 flex items-center justify-center min-h-screen p-4">
 
   <div id="root"></div>
 
@@ -28,6 +28,24 @@
       const [pastReports, setPastReports] = useState([]);
       const [editingTaskId, setEditingTaskId] = useState(null);
       const [editingTime, setEditingTime] = useState('');
+
+      const taskOptions = [
+        "Columna CONFIRMADO",
+        "Columna POR UPSELL",
+        "Columna DATOS ENTREGA",
+        "Columna RESPONDER",
+        "Columna FALLIDO",
+        "Columna REMINDER",
+        "Columna PENDIENTE",
+        "Chat en vivo (filtro Abiertos)",
+        "Chat en vivo (filtro Pendiente)",
+        "Ordenes confirmadas sheet (CHECK info)",
+        "CHAT Pending Orders (Pending Orders 1)",
+        "CALL Pending Orders (Pending Orders 1)",
+        "CHAT Pending Orders (Pending Orders 2)",
+        "CALL Pending Orders (Pending Orders 2)",
+        "Facebook/Instagram Comments & Chats"
+      ];
 
       // Load data from localStorage on initial render
       useEffect(() => {
@@ -45,7 +63,7 @@
         }
       }, []);
 
-      // Save tasks to localStorage whenever they change
+      // Save tasks to localStorage when they change
       useEffect(() => {
         try {
           localStorage.setItem('tasks', JSON.stringify(tasks));
@@ -54,7 +72,7 @@
         }
       }, [tasks]);
 
-      // Save reports to localStorage whenever they change
+      // Save reports to localStorage when they change
       useEffect(() => {
         try {
           localStorage.setItem('reports', JSON.stringify(pastReports));
@@ -91,7 +109,6 @@
         return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
       };
 
-      // New function to handle manual time edits
       const handleTimeEdit = (id, time) => {
         const parts = time.split(':').map(Number);
         if (parts.length === 3 && !parts.some(isNaN)) {
@@ -124,11 +141,11 @@
       const toggleTimer = (id) => {
         setTasks(prevTasks =>
           prevTasks.map(task => {
-            // Stop any other running timer
+            // Stop any other running timers
             if (task.running && task.id !== id) {
               return { ...task, running: false, elapsedTime: task.elapsedTime + (Date.now() - task.lastTime), lastTime: null };
             }
-            // Toggle the selected task
+            // Toggle the selected task's timer
             if (task.id === id) {
               const newRunningState = !task.running;
               const newElapsedTime = newRunningState ? task.elapsedTime : task.elapsedTime + (Date.now() - task.lastTime);
@@ -158,6 +175,7 @@
           const hours = Math.floor(totalSeconds / 3600);
           const minutes = Math.floor((totalSeconds % 3600) / 60);
           const timeString = `${hours}h ${minutes}m`;
+          
           return `${task.name}: ${timeString}`;
         });
 
@@ -166,15 +184,15 @@
         const totalMinutes = Math.floor((totalSeconds % 3600) / 60);
         const totalTimeString = `${totalHours}h ${totalMinutes}m`;
         
-        const currentDate = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        const currentDate = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
         const reportContent = `End of Day Report: ${currentDate}
 Hours worked: ${totalTimeString}
-Today I've worked on the following tasks:\n${formattedReport.join('\n')}`;
+Today I worked on the following tasks:\n${formattedReport.join('\n')}`;
 
         setReportOutput(reportContent);
 
-        // Save report to past reports
+        // Save report to history
         const reportDocId = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
         const newReport = {
           id: reportDocId,
@@ -183,7 +201,7 @@ Today I've worked on the following tasks:\n${formattedReport.join('\n')}`;
         };
 
         setPastReports(prevReports => {
-          // Find and replace if report for today already exists
+          // Find and replace if a report for today already exists
           const existingReportIndex = prevReports.findIndex(report => report.id === reportDocId);
           if (existingReportIndex > -1) {
             const updatedReports = [...prevReports];
@@ -195,25 +213,30 @@ Today I've worked on the following tasks:\n${formattedReport.join('\n')}`;
       };
 
       return (
-        <div className="max-w-xl w-full bg-white rounded-2xl shadow-xl p-8 space-y-6">
-          <h1 className="text-4xl font-extrabold text-gray-800 text-center">
-            Task Manager TL
+        <div className="max-w-xl w-full bg-gray-800 rounded-2xl shadow-xl p-8 space-y-6">
+          <h1 className="text-4xl font-extrabold text-white text-center">
+            Task manager TL
           </h1>
           {/* Task input section */}
-          <form onSubmit={addTask} className="flex items-center gap-2">
-            <input
-              type="text"
-              value={taskInput}
-              onChange={(e) => setTaskInput(e.target.value)}
-              placeholder="Nombre de la tarea"
-              className="flex-1 px-5 py-3 border-2 border-gray-300 rounded-full focus:outline-none focus:ring-4 focus:ring-blue-500 transition-all"
-              required
-            />
+          <form onSubmit={addTask} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+            <div className="flex-1 flex flex-col sm:flex-row gap-2 w-full">
+              <select
+                value={taskInput}
+                onChange={(e) => setTaskInput(e.target.value)}
+                className="flex-1 px-5 py-3 border-2 border-gray-600 bg-gray-700 text-white rounded-full focus:outline-none focus:ring-4 focus:ring-blue-500 transition-all"
+                required
+              >
+                <option value="" disabled>Select task</option>
+                {taskOptions.map(option => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+            </div>
             <button
               type="submit"
-              className="bg-blue-600 text-white px-6 py-3 rounded-full font-semibold hover:bg-blue-700 transition duration-300 shadow-lg"
+              className="bg-blue-600 text-white px-6 py-3 rounded-full font-semibold hover:bg-blue-700 transition duration-300 shadow-lg w-full sm:w-auto"
             >
-              Agregar Tarea
+              Add Task
             </button>
           </form>
 
@@ -221,9 +244,9 @@ Today I've worked on the following tasks:\n${formattedReport.join('\n')}`;
           <div className="space-y-4">
             {tasks.length > 0 ? (
               tasks.map((task) => (
-                <div key={task.id} className="flex items-center justify-between bg-gray-50 p-5 rounded-xl shadow-md">
+                <div key={task.id} className="flex items-center justify-between bg-gray-700 p-5 rounded-xl shadow-md">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4">
-                    <span className="font-medium text-gray-700 text-lg">
+                    <span className="font-medium text-gray-300 text-lg">
                       {task.name}
                     </span>
                     {/* Time display with edit functionality */}
@@ -239,11 +262,11 @@ Today I've worked on the following tasks:\n${formattedReport.join('\n')}`;
                             handleTimeEdit(task.id, editingTime);
                           }
                         }}
-                        className="font-mono text-xl text-gray-600 border-b-2 border-blue-500 focus:outline-none"
+                        className="font-mono text-xl text-gray-400 border-b-2 border-blue-500 bg-gray-700 focus:outline-none"
                       />
                     ) : (
                       <span
-                        className="font-mono text-xl text-gray-600 cursor-pointer"
+                        className="font-mono text-xl text-gray-400 cursor-pointer"
                         onClick={() => {
                           setEditingTaskId(task.id);
                           setEditingTime(formatTime(task.elapsedTime));
@@ -258,7 +281,7 @@ Today I've worked on the following tasks:\n${formattedReport.join('\n')}`;
                       onClick={() => toggleTimer(task.id)}
                       className={`px-5 py-2 rounded-full text-white font-semibold transition duration-300 shadow-md ${task.running ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'}`}
                     >
-                      {task.running ? 'Parar' : 'Iniciar'}
+                      {task.running ? 'Stop' : 'Start'}
                     </button>
                     <button
                       onClick={() => deleteTask(task.id)}
@@ -272,11 +295,11 @@ Today I've worked on the following tasks:\n${formattedReport.join('\n')}`;
                 </div>
               ))
             ) : (
-              <p className="text-center text-gray-500 italic">No hay tareas aún. Agrega una para empezar.</p>
+              <p className="text-center text-gray-400 italic">No tasks yet. Add one to begin.</p>
             )}
           </div>
 
-          <hr className="border-t border-gray-300" />
+          <hr className="border-t border-gray-600" />
 
           {/* Report section */}
           <div className="flex flex-col items-center">
@@ -284,27 +307,27 @@ Today I've worked on the following tasks:\n${formattedReport.join('\n')}`;
               onClick={generateReport}
               className="bg-purple-600 text-white px-6 py-3 rounded-full font-semibold hover:bg-purple-700 transition duration-300 shadow-lg mb-4"
             >
-              Generar E.O.D.R.
+              Generate E.O.D.R.
             </button>
-            <div className="w-full bg-gray-50 rounded-xl p-5 font-mono text-sm text-gray-800 whitespace-pre-wrap">
-              {reportOutput || 'El informe del día se mostrará aquí...'}
+            <div className="w-full bg-gray-700 text-gray-200 rounded-xl p-5 font-mono text-sm whitespace-pre-wrap">
+              {reportOutput || 'The end-of-day report will appear here...'}
             </div>
           </div>
 
-          {/* Past Reports Section */}
-          <hr className="border-t border-gray-300" />
+          {/* Past reports section */}
+          <hr className="border-t border-gray-600" />
           <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-center text-gray-800">Historial de Reportes</h2>
+            <h2 className="text-2xl font-bold text-center text-white">Report History</h2>
             {pastReports.length > 0 ? (
               pastReports.map((report) => (
-                <div key={report.id} className="bg-gray-50 rounded-xl p-5 shadow-md">
-                  <pre className="font-mono text-sm text-gray-800 whitespace-pre-wrap">
+                <div key={report.id} className="bg-gray-700 rounded-xl p-5 shadow-md">
+                  <pre className="font-mono text-sm text-gray-200 whitespace-pre-wrap">
                     {report.content}
                   </pre>
                 </div>
               ))
             ) : (
-              <p className="text-center text-gray-500 italic">No hay reportes anteriores.</p>
+              <p className="text-center text-gray-400 italic">No past reports.</p>
             )}
           </div>
         </div>
