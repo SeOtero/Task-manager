@@ -31,6 +31,8 @@
       const [editingTime, setEditingTime] = useState('');
       const [editingQuantityId, setEditingQuantityId] = useState(null);
       const [editingQuantity, setEditingQuantity] = useState('');
+      const [customTaskName, setCustomTaskName] = useState(''); // New state for custom task input
+      const [isCustomTask, setIsCustomTask] = useState(false); // State to toggle custom input
 
       const taskOptions = [
         "Columna CONFIRMADO",
@@ -135,22 +137,44 @@
         setEditingQuantityId(null);
       };
 
+      const handleTaskInputChange = (e) => {
+        const value = e.target.value;
+        setTaskInput(value);
+        if (value === "OTHER_CUSTOM_TASK") {
+          setIsCustomTask(true);
+        } else {
+          setIsCustomTask(false);
+          setCustomTaskName(''); // Clear custom input if a standard task is selected
+        }
+      };
+
       const addTask = (e) => {
         e.preventDefault();
-        if (!taskInput.trim()) return;
+        
+        let taskName = '';
+        if (isCustomTask) {
+          taskName = customTaskName.trim();
+        } else {
+          taskName = taskInput.trim();
+        }
+
+        if (!taskName) return;
 
         const newTask = {
           id: Date.now(),
-          name: taskInput.trim(),
+          name: taskName,
           quantity: orderQuantity ? parseInt(orderQuantity) : null,
           elapsedTime: 0,
           running: false,
           lastTime: null
         };
+        
         setTasks(prevTasks => [...prevTasks, newTask]);
         setTaskInput('');
         setOrderQuantity('');
         setReportOutput('');
+        setCustomTaskName('');
+        setIsCustomTask(false);
       };
 
       const toggleTimer = (id) => {
@@ -236,17 +260,33 @@ Today I worked on the following tasks:\n${formattedReport.join('\n')}`;
           {/* Task input section */}
           <form onSubmit={addTask} className="flex flex-col gap-4">
             <div className="flex flex-col gap-2 w-full">
-              <select
-                value={taskInput}
-                onChange={(e) => setTaskInput(e.target.value)}
-                className="flex-1 px-5 py-3 border-2 border-gray-600 bg-gray-700 text-white rounded-full focus:outline-none focus:ring-4 focus:ring-blue-500 transition-all"
-                required
-              >
-                <option value="" disabled>Select task</option>
-                {taskOptions.map(option => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </select>
+              
+              {!isCustomTask && (
+                <select
+                  value={taskInput}
+                  onChange={handleTaskInputChange}
+                  className="flex-1 px-5 py-3 border-2 border-gray-600 bg-gray-700 text-white rounded-full focus:outline-none focus:ring-4 focus:ring-blue-500 transition-all"
+                  required={!isCustomTask}
+                >
+                  <option value="" disabled>Select task</option>
+                  {taskOptions.map(option => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                  <option value="OTHER_CUSTOM_TASK">Other (Specify)</option>
+                </select>
+              )}
+
+              {isCustomTask && (
+                <input
+                  type="text"
+                  value={customTaskName}
+                  onChange={(e) => setCustomTaskName(e.target.value)}
+                  placeholder="Enter custom task name"
+                  className="flex-1 px-5 py-3 border-2 border-gray-600 bg-gray-700 text-white rounded-full focus:outline-none focus:ring-4 focus:ring-blue-500 transition-all"
+                  required={isCustomTask}
+                />
+              )}
+
               <input
                 type="number"
                 value={orderQuantity}
@@ -261,6 +301,15 @@ Today I worked on the following tasks:\n${formattedReport.join('\n')}`;
             >
               Add Task
             </button>
+            {isCustomTask && (
+              <button
+                type="button"
+                onClick={() => { setIsCustomTask(false); setTaskInput(''); setCustomTaskName(''); }}
+                className="text-gray-400 hover:text-white mt-2 transition duration-300"
+              >
+                Cancel Custom Task
+              </button>
+            )}
           </form>
 
           {/* Task list section */}
@@ -285,7 +334,7 @@ Today I worked on the following tasks:\n${formattedReport.join('\n')}`;
                             handleQuantityEdit(task.id, editingQuantity);
                           }
                         }}
-                        className="font-mono text-xl text-gray-400 border-b-2 border-blue-500 bg-gray-700 focus:outline-none w-20"
+                        className="font-mono text-lg text-gray-400 border-b-2 border-blue-500 bg-gray-700 focus:outline-none w-20"
                       />
                     ) : (
                       <span
@@ -388,3 +437,4 @@ Today I worked on the following tasks:\n${formattedReport.join('\n')}`;
   </script>
 </body>
 </html>
+
