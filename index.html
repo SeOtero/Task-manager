@@ -21,15 +21,275 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        const App = () => {
-            const [tasks, setTasks] = useState([]);
-            const [taskInput, setTaskInput] = useState('');
-            const [shopInput, setShopInput] = useState(''); 
-            const [orderQuantity, setOrderQuantity] = useState('');
-            const [reportOutput, setReportOutput] = useState('');
-            const [pastReports, setPastReports] = useState([]);
+        // --- 1. DATOS CONSTANTES Y UTILS ---
+        const shopOptions = [
+            "Tienda Lujosa",
+            "Clara Tienda",
+            "Clara Tierra",
+        ];
+
+        // Nombre de la tarea predeterminada para Clara Tienda
+        const CLARA_TIENDA_TASK_NAME = "Órdenes / Tarea Única";
+
+        const taskOptions = [
+            "Columna CONFIRMADO",
+            "Columna POR UPSELL",
+            "Columna DATOS ENTREGA",
+            "Columna RESPONDER",
+            "Columna FALLIDO",
+            "Columna REMINDER",
+            "Columna PENDIENTE",
+            "Chat en vivo (filtro Abiertos)",
+            "Chat en vivo (filtro Pendiente)",
+            "Ordenes confirmadas sheet (CHECK info)",
+            "CHAT Pending Orders (Pending Orders 1)",
+            "CALL Pending Orders (Pending Orders 1)",
+            "Facebook/Instagram Comments & Chats",
+            "Meeting"
+        ];
+
+        const formatTime = (ms) => {
+            if (ms < 0) return '00:00:00';
+            const totalSeconds = Math.floor(ms / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            const pad = (num) => String(num).padStart(2, '0');
+            return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+        };
+        
+        /**
+         * Genera el contenido de texto para el reporte E.O.D.R. (End of Day Report).
+         * @param {Array<Object>} tasks - La lista de tareas activas.
+         * @returns {string} El contenido formateado del reporte.
+         */
+        const generateEODRContent = (tasks) => {
+            let totalMilliseconds = 0;
             
-            // Estados para edición
+            // 1. Agrupar tareas por tienda
+            const tasksByShop = tasks.reduce((acc, task) => {
+                // Si la tarea está corriendo, calcula el tiempo finalizado hasta ahora
+                const finalTime = task.running ? task.elapsedTime + (Date.now() - (task.lastTime || Date.now())) : task.elapsedTime;
+                
+                const shopName = task.shop || 'Sin Tienda'; 
+                if (!acc[shopName]) {
+                    acc[shopName] = [];
+                }
+                acc[shopName].push({ ...task, finalTime });
+                totalMilliseconds += finalTime;
+                return acc;
+            }, {});
+
+            let formattedReport = [];
+
+            // 2. Formatear reporte por tienda
+            Object.keys(tasksByShop).sort().forEach(shopName => {
+                formattedReport.push(`--- ${shopName} ---`);
+                
+                tasksByShop[shopName].forEach(task => {
+                    const totalSeconds = Math.floor(task.finalTime / 1000);
+                    const hours = Math.floor(totalSeconds / 3600);
+                    const minutes = Math.floor((totalSeconds % 3600) / 60);
+                    const timeString = `${hours}h ${minutes}m`;
+                    const quantityText = task.quantity ? ` (${task.quantity} orders)` : '';
+                    
+                    // Usar el nombre de la tarea sin la tienda
+                    const reportTaskName = task.rawTaskName || task.name.replace(` [${shopName}]`, '');
+
+                    formattedReport.push(`${reportTaskName}${quantityText}: ${timeString}`);
+                });
+            });
+
+            // 3. Calcular tiempo total
+            const totalSeconds = Math.floor(totalMilliseconds / 1000);
+            const totalHours = Math.floor(totalSeconds / 3600);
+            const totalMinutes = Math.floor((totalSeconds % 3600) / 60);
+            const totalTimeString = `${totalHours}h ${totalMinutes}m`;
+            
+            const currentDate = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+            // 4. Construir reporte final
+            const reportContent = `End of Day Report: ${currentDate}
+Hours worked: ${totalTimeString}
+
+Today I worked on the following tasks:\n${formattedReport.join('\n')}`;
+            
+            return reportContent;
+        };
+
+
+        // --- 2. COMPONENTE: TaskListItem (Tarea individual) ---
+        const TaskListItem = ({ task, toggleTimer, deleteTask, updateTaskDetails, formatTime, shopOptions, errorMessage, setErrorMessage, setEditingTaskId, setEditingTime, setEditingQuantityId, setEditingQuantity, setEditingShopId, setEditingShop, editingTaskId, editingTime, editingQuantityId, editingQuantity, editingShopId, editingShop }) => {
+            
+            // Determina si la tienda es Clara Tienda con tarea única
+            const isClaraTiendaFixedTask = task.rawTaskName === CLARA_TIENDA_TASK_NAME;
+
+            // Handlers de edición
+            const handleTimeEdit = (id, time) => {
+                setErrorMessage('');
+                const parts = time.split(':').map(Number);
+                if (parts.length === 3 && !parts.some(isNaN)) {
+                    const totalMs = (parts[0] * 3600 + parts[1] * 60 + parts[2]) * 1000;
+                    updateTaskDetails(id, { elapsedTime: totalMs });
+                    setEditingTaskId(null);
+                } else {
+                     setEditingTaskId(null); 
+                     // setErrorMessage('Formato de tiempo inválido. Usa HH:MM:SS.'); 
+                }
+            };
+
+            const handleQuantityEdit = (id, quantity) => {
+                setErrorMessage('');
+                const newQuantity = parseInt(quantity);
+                updateTaskDetails(id, { quantity: newQuantity || null });
+                setEditingQuantityId(null);
+            };
+            
+            const handleShopEdit = (id, newShop) => {
+                setErrorMessage('');
+                if (isClaraTiendaFixedTask) return; // Evitar la edición si es Clara Tienda Tarea Única
+
+                if (!newShop) {
+                    setErrorMessage('La tienda no puede estar vacía.');
+                    return;
+                }
+                // updateTaskDetails gestionará la validación de duplicados (Tarea + Tienda)
+                updateTaskDetails(id, { shop: newShop }); 
+                setEditingShopId(null);
+            };
+            
+            const currentElapsedTime = task.running ? task.elapsedTime + (Date.now() - (task.lastTime || Date.now())) : task.elapsedTime;
+            
+            return (
+                <div key={task.id} className={`flex items-center justify-between gap-4 bg-gray-700 p-5 rounded-xl shadow-md ${task.running ? 'border-l-4 border-green-500' : 'border-l-4 border-gray-600'}`}>
+                    <div className="flex flex-col gap-1 min-w-0 flex-grow">
+                        
+                        {/* Tienda con funcionalidad de edición */}
+                        {editingShopId === task.id && !isClaraTiendaFixedTask ? (
+                            <select
+                                value={editingShop}
+                                onChange={(e) => setEditingShop(e.target.value)}
+                                onBlur={() => handleShopEdit(task.id, editingShop)}
+                                onKeyPress={(e) => {
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        handleShopEdit(task.id, editingShop);
+                                    }
+                                }}
+                                className="px-2 py-1 border-b-2 border-yellow-500 bg-gray-700 text-yellow-300 font-semibold focus:outline-none w-32 rounded"
+                                autoFocus
+                            >
+                                <option value="" disabled>Selecciona...</option>
+                                {shopOptions.map(option => (
+                                    <option key={option} value={option}>{option}</option>
+                                ))}
+                            </select>
+                        ) : (
+                            <span
+                                className={`font-bold text-sm transition-colors ${isClaraTiendaFixedTask ? 'text-yellow-500 cursor-default' : 'text-yellow-300 cursor-pointer hover:text-yellow-200'}`}
+                                onClick={() => {
+                                    if (!isClaraTiendaFixedTask) { // Solo permitir edición si NO es la tarea fija
+                                        setEditingShopId(task.id);
+                                        setEditingShop(task.shop || '');
+                                        setEditingTaskId(null); 
+                                        setEditingQuantityId(null);
+                                    }
+                                }}
+                                title={isClaraTiendaFixedTask ? "No se puede cambiar la tienda de la Tarea Única" : "Click para editar tienda"}
+                            >
+                                {task.shop || 'Sin Tienda'}
+                            </span>
+                        )}
+
+
+                        <span className="font-medium text-gray-300 text-lg break-words">
+                            {task.rawTaskName || task.name}
+                        </span>
+                        
+                        {/* Quantity display with edit functionality */}
+                        {editingQuantityId === task.id ? (
+                            <input
+                                type="number"
+                                value={editingQuantity}
+                                onChange={(e) => setEditingQuantity(e.target.value)}
+                                onBlur={() => handleQuantityEdit(task.id, editingQuantity)}
+                                onKeyPress={(e) => {
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        handleQuantityEdit(task.id, editingQuantity);
+                                    }
+                                }}
+                                className="font-mono text-lg text-gray-400 border-b-2 border-blue-500 bg-gray-700 focus:outline-none w-24"
+                                autoFocus
+                            />
+                        ) : (
+                            <span
+                                className="font-mono text-base text-gray-400 cursor-pointer hover:text-white transition-colors"
+                                onClick={() => {
+                                    setEditingQuantityId(task.id);
+                                    setEditingQuantity(task.quantity || '');
+                                    setEditingTaskId(null); // Asegura que solo se edite una cosa a la vez
+                                    setEditingShopId(null);
+                                }}
+                            >
+                                {task.quantity ? `${task.quantity} órdenes` : '(sin cantidad)'}
+                            </span>
+                        )}
+                    </div>
+                    {/* BLOQUE DE CONTROL: Tiempo, Iniciar/Detener, Eliminar */}
+                    <div className="flex items-center gap-4 flex-shrink-0"> 
+                        {/* Time display with edit functionality */}
+                        {editingTaskId === task.id ? (
+                            <input
+                                type="text"
+                                value={editingTime}
+                                onChange={(e) => setEditingTime(e.target.value)}
+                                onBlur={() => handleTimeEdit(task.id, editingTime)}
+                                onKeyPress={(e) => {
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        handleTimeEdit(task.id, editingTime);
+                                    }
+                                }}
+                                placeholder="HH:MM:SS"
+                                className="font-mono text-xl text-gray-400 border-b-2 border-blue-500 bg-gray-700 focus:outline-none w-28"
+                                autoFocus
+                            />
+                        ) : (
+                            <span
+                                className="font-mono text-xl text-white cursor-pointer hover:text-blue-400 transition-colors"
+                                onClick={() => {
+                                    setEditingTaskId(task.id);
+                                    setEditingTime(formatTime(task.elapsedTime));
+                                    setEditingQuantityId(null); // Asegura que solo se edite una cosa a la vez
+                                    setEditingShopId(null);
+                                }}
+                            >
+                                {formatTime(currentElapsedTime)}
+                            </span>
+                        )}
+                        <button
+                            onClick={() => toggleTimer(task.id)}
+                            className={`px-5 py-2 rounded-full text-white font-semibold transition duration-300 shadow-md ${task.running ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'}`}
+                        >
+                            {task.running ? 'Detener' : 'Iniciar'}
+                        </button>
+                        <button
+                            onClick={() => deleteTask(task.id)}
+                            className="p-3 text-gray-400 hover:text-red-500 transition duration-300"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 112 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            )
+        }
+
+        // --- 3. COMPONENTE: TaskList (Contenedor de lista) ---
+        const TaskList = ({ tasks, toggleTimer, deleteTask, updateTaskDetails, formatTime, shopOptions, errorMessage, setErrorMessage }) => {
+            // Estados para edición, movidos aquí para centralizar la gestión de la edición de ítems
             const [editingTaskId, setEditingTaskId] = useState(null);
             const [editingTime, setEditingTime] = useState('');
             const [editingQuantityId, setEditingQuantityId] = useState(null);
@@ -37,36 +297,249 @@
             const [editingShopId, setEditingShopId] = useState(null); 
             const [editingShop, setEditingShop] = useState(''); 
 
+            return (
+                <div className="space-y-4">
+                    <hr className="border-t border-gray-600" />
+                    {tasks.length > 0 ? (
+                        tasks.map((task) => (
+                           <TaskListItem
+                                key={task.id}
+                                task={task}
+                                toggleTimer={toggleTimer}
+                                deleteTask={deleteTask}
+                                updateTaskDetails={updateTaskDetails}
+                                formatTime={formatTime}
+                                shopOptions={shopOptions}
+                                errorMessage={errorMessage}
+                                setErrorMessage={setErrorMessage}
+                                
+                                editingTaskId={editingTaskId}
+                                setEditingTaskId={setEditingTaskId}
+                                editingTime={editingTime}
+                                setEditingTime={setEditingTime}
+
+                                editingQuantityId={editingQuantityId}
+                                setEditingQuantityId={setEditingQuantityId}
+                                editingQuantity={editingQuantity}
+                                setEditingQuantity={setEditingQuantity}
+
+                                editingShopId={editingShopId}
+                                setEditingShopId={setEditingShopId}
+                                editingShop={editingShop}
+                                setEditingShop={setEditingShop}
+                           />
+                        ))
+                    ) : (
+                        <p className="text-center text-gray-400 italic">Aún no hay tareas. Agrega una para empezar.</p>
+                    )}
+                </div>
+            )
+        }
+        
+        // --- 4. COMPONENTE: TaskInputForm (Formulario de adición) ---
+        const TaskInputForm = ({ tasks, setTasks, shopOptions, taskOptions, orderQuantity, setOrderQuantity, setReportOutput, setErrorMessage, errorMessage }) => {
+            const [taskInput, setTaskInput] = useState('');
+            const [shopInput, setShopInput] = useState(''); 
             const [customTaskName, setCustomTaskName] = useState('');
             const [isCustomTask, setIsCustomTask] = useState(false);
+            
+            // Determina si la tienda seleccionada es Clara Tienda
+            const isClaraTienda = shopInput === "Clara Tienda";
+
+            const handleTaskInputChange = (e) => {
+                setErrorMessage('');
+                const value = e.target.value;
+                setTaskInput(value);
+                if (value === "OTHER_CUSTOM_TASK") {
+                    setIsCustomTask(true);
+                } else {
+                    setIsCustomTask(false);
+                    setCustomTaskName('');
+                }
+            };
+            
+            const handleCustomTaskNameChange = (e) => {
+                setErrorMessage('');
+                setCustomTaskName(e.target.value);
+            }
+            
+            const handleShopInputChange = (e) => {
+                setErrorMessage('');
+                const newShop = e.target.value;
+                setShopInput(newShop);
+                
+                // Limpiar la selección de tarea si cambiamos a Clara Tienda
+                if (newShop === "Clara Tienda") {
+                    setTaskInput('');
+                    setCustomTaskName('');
+                    setIsCustomTask(false);
+                }
+            }
+
+            const addTask = (e) => {
+                e.preventDefault();
+                setErrorMessage('');
+
+                // 1. Determinar el nombre de la tarea
+                let taskName = '';
+                if (isClaraTienda) {
+                    // Si es Clara Tienda, el nombre de la tarea es fijo
+                    taskName = CLARA_TIENDA_TASK_NAME;
+                } else if (isCustomTask) {
+                    taskName = customTaskName.trim();
+                } else {
+                    taskName = taskInput.trim();
+                }
+
+                // 2. Validaciones
+                if (!shopInput) {
+                     setErrorMessage('Por favor, selecciona una tienda.');
+                     return;
+                }
+                
+                // Solo requerimos que taskName exista si NO es Clara Tienda
+                if (!isClaraTienda && !taskName) {
+                    setErrorMessage('Por favor, selecciona o ingresa un nombre para la tarea.');
+                    return;
+                }
+                
+                // Si es Clara Tienda, no puede tener órdenes duplicadas. 
+                // En otras tiendas, no puede haber Tarea+Tienda duplicada.
+                const fullTaskName = `${taskName} [${shopInput}]`;
+                
+                // LÓGICA DE VALIDACIÓN DE DUPLICADOS: Chequea nombre + tienda
+                const isDuplicate = tasks.some(task => 
+                    task.name.toLowerCase() === fullTaskName.toLowerCase()
+                );
+
+                if (isDuplicate) {
+                    setErrorMessage(`La tarea "${fullTaskName}" ya existe. No puedes duplicar Tarea+Tienda.`);
+                    return;
+                }
+                // --- FIN DE LÓGICA DE VALIDACIÓN ---
+
+                const newTask = {
+                    id: Date.now(),
+                    name: fullTaskName, // Guarda el nombre completo (Tarea + [Tienda])
+                    rawTaskName: taskName, // Guarda el nombre sin la tienda 
+                    shop: shopInput, // Guarda el nombre de la tienda
+                    quantity: orderQuantity ? parseInt(orderQuantity) : null,
+                    elapsedTime: 0,
+                    running: false,
+                    lastTime: null
+                };
+                
+                setTasks(prevTasks => [...prevTasks, newTask]);
+                
+                // Limpiar inputs, excepto la tienda que se puede reutilizar
+                // setShopInput(''); // Dejar la tienda seleccionada para conveniencia
+                setTaskInput('');
+                setOrderQuantity('');
+                setReportOutput('');
+                setCustomTaskName('');
+                setIsCustomTask(false);
+            };
+
+            return (
+                 <form onSubmit={addTask} className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-2 w-full">
+
+                        {/* Campo de selección de Tienda */}
+                         <select
+                            value={shopInput}
+                            onChange={handleShopInputChange}
+                            className="flex-1 px-5 py-3 border-2 border-yellow-600 bg-gray-700 text-yellow-300 rounded-full focus:outline-none focus:ring-4 focus:ring-yellow-500 transition-all font-semibold"
+                            required
+                        >
+                            <option value="" disabled>--- Seleccionar Tienda ---</option>
+                            {shopOptions.map(option => (
+                                <option key={option} value={option}>{option}</option>
+                            ))}
+                        </select>
+                        
+                        {/* INPUTS CONDICIONALES */}
+
+                        {/* 1. Selección de Tarea (NO se muestra para Clara Tienda) */}
+                        {!isClaraTienda && !isCustomTask && (
+                            <select
+                                value={taskInput}
+                                onChange={handleTaskInputChange}
+                                className="flex-1 px-5 py-3 border-2 border-gray-600 bg-gray-700 text-white rounded-full focus:outline-none focus:ring-4 focus:ring-blue-500 transition-all"
+                                required={!isCustomTask}
+                            >
+                                <option value="" disabled>Seleccionar tarea</option>
+                                {taskOptions.map(option => (
+                                    <option key={option} value={option}>{option}</option>
+                                ))}
+                                <option value="OTHER_CUSTOM_TASK">Otra (Especificar)</option>
+                            </select>
+                        )}
+                        
+                        {/* Tarea fija mostrada para Clara Tienda */}
+                        {isClaraTienda && (
+                            <div className="flex-1 px-5 py-3 border-2 border-gray-600 bg-gray-700 text-gray-400 rounded-full italic">
+                                Tarea fija: {CLARA_TIENDA_TASK_NAME}
+                            </div>
+                        )}
+
+                        {/* 2. Tarea Personalizada (Solo si NO es Clara Tienda y se seleccionó la opción) */}
+                        {!isClaraTienda && isCustomTask && (
+                            <input
+                                type="text"
+                                value={customTaskName}
+                                onChange={handleCustomTaskNameChange}
+                                placeholder="Ingresa el nombre de la tarea"
+                                className="flex-1 px-5 py-3 border-2 border-gray-600 bg-gray-700 text-white rounded-full focus:outline-none focus:ring-4 focus:ring-blue-500 transition-all"
+                                required={isCustomTask}
+                            />
+                        )}
+
+                        {/* 3. Cantidad de Órdenes (Se muestra siempre) */}
+                        <input
+                            type="number"
+                            value={orderQuantity}
+                            onChange={(e) => setOrderQuantity(e.target.value)}
+                            placeholder="Cantidad de Órdenes (opcional)"
+                            className="flex-1 px-5 py-3 border-2 border-gray-600 bg-gray-700 text-white rounded-full focus:outline-none focus:ring-4 focus:ring-blue-500 transition-all"
+                        />
+                    </div>
+                    
+                    {/* Mensaje de error de duplicado/validación */}
+                    {errorMessage && (
+                        <p className="text-red-400 font-medium bg-red-900/50 p-3 rounded-xl text-center transition-all duration-300">
+                            {errorMessage}
+                        </p>
+                    )}
+                    
+                    <button
+                        type="submit"
+                        className="bg-blue-600 text-white px-6 py-3 rounded-full font-semibold hover:bg-blue-700 transition duration-300 shadow-lg w-full sm:w-auto"
+                    >
+                        Agregar Tarea
+                    </button>
+                    {isCustomTask && !isClaraTienda && (
+                        <button
+                            type="button"
+                            onClick={() => { setIsCustomTask(false); setTaskInput(''); setCustomTaskName(''); setErrorMessage(''); }}
+                            className="text-gray-400 hover:text-white mt-2 transition duration-300"
+                        >
+                            Cancelar Tarea Personalizada
+                        </button>
+                    )}
+                </form>
+            )
+        }
+
+
+        // --- 5. COMPONENTE PRINCIPAL: App (Maneja el estado y los efectos) ---
+        const App = () => {
+            const [tasks, setTasks] = useState([]);
+            const [orderQuantity, setOrderQuantity] = useState('');
+            const [reportOutput, setReportOutput] = useState('');
+            const [pastReports, setPastReports] = useState([]);
             const [errorMessage, setErrorMessage] = useState('');
 
-            // Lista de tiendas ACTUALIZADA según tu solicitud
-            const shopOptions = [
-                "Tienda Lujosa",
-                "Clara Tienda",
-                "Clara Tierra"
-                
-            ];
-
-            const taskOptions = [
-                "Columna CONFIRMADO",
-                "Columna POR UPSELL",
-                "Columna DATOS ENTREGA",
-                "Columna RESPONDER",
-                "Columna FALLIDO",
-                "Columna REMINDER",
-                "Columna PENDIENTE",
-                "Chat en vivo (filtro Abiertos)",
-                "Chat en vivo (filtro Pendiente)",
-                "Ordenes confirmadas sheet (CHECK info)",
-                "CHAT Pending Orders (Pending Orders 1)",
-                "CALL Pending Orders (Pending Orders 1)",
-                "Facebook/Instagram Comments & Chats",
-                "Meeting"
-            ];
-
-            // Load data from localStorage on initial render
+            // Lógica de carga y guardado de datos (permanece en App)
             useEffect(() => {
                 try {
                     const savedTasks = JSON.parse(localStorage.getItem('tasks'));
@@ -82,7 +555,6 @@
                 }
             }, []);
 
-            // Save tasks to localStorage when they change
             useEffect(() => {
                 try {
                     localStorage.setItem('tasks', JSON.stringify(tasks));
@@ -91,7 +563,6 @@
                 }
             }, [tasks]);
 
-            // Save reports to localStorage when they change
             useEffect(() => {
                 try {
                     localStorage.setItem('reports', JSON.stringify(pastReports));
@@ -100,7 +571,7 @@
                 }
             }, [pastReports]);
 
-            // Timer update loop
+            // Timer update loop (permanece en App)
             useEffect(() => {
                 const timerInterval = setInterval(() => {
                     setTasks(currentTasks =>
@@ -118,20 +589,19 @@
                 return () => clearInterval(timerInterval);
             }, []);
 
-            const formatTime = (ms) => {
-                if (ms < 0) return '00:00:00';
-                const totalSeconds = Math.floor(ms / 1000);
-                const hours = Math.floor(totalSeconds / 3600);
-                const minutes = Math.floor((totalSeconds % 3600) / 60);
-                const seconds = totalSeconds % 60;
-                const pad = (num) => String(num).padStart(2, '0');
-                return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
-            };
+            // Handlers de Tareas (Permanecen en App para modificar el estado central)
 
             const updateTaskDetails = (id, newDetails) => {
                 setTasks(prevTasks =>
                     prevTasks.map(task => {
                         if (task.id === id) {
+                            // Si es la tarea fija de Clara Tienda, no permitimos cambiar la tienda
+                            const isFixedTask = task.rawTaskName === CLARA_TIENDA_TASK_NAME;
+                            if (isFixedTask && newDetails.shop !== undefined && newDetails.shop !== task.shop) {
+                                setErrorMessage(`La tienda de la tarea fija "${CLARA_TIENDA_TASK_NAME}" no puede cambiarse.`);
+                                return task;
+                            }
+
                             let newShop = newDetails.shop !== undefined ? newDetails.shop : task.shop;
                             let newRawTaskName = task.rawTaskName;
                             
@@ -162,114 +632,6 @@
                         return task;
                     })
                 );
-            };
-
-            // Handlers de edición
-            const handleTimeEdit = (id, time) => {
-                const parts = time.split(':').map(Number);
-                if (parts.length === 3 && !parts.some(isNaN)) {
-                    const totalMs = (parts[0] * 3600 + parts[1] * 60 + parts[2]) * 1000;
-                    updateTaskDetails(id, { elapsedTime: totalMs });
-                    setEditingTaskId(null);
-                } else {
-                     setErrorMessage('Formato de tiempo inválido. Usa HH:MM:SS.');
-                }
-            };
-
-            const handleQuantityEdit = (id, quantity) => {
-                const newQuantity = parseInt(quantity);
-                updateTaskDetails(id, { quantity: newQuantity || null });
-                setEditingQuantityId(null);
-            };
-            
-            const handleShopEdit = (id, newShop) => {
-                if (!newShop) {
-                    setErrorMessage('La tienda no puede estar vacía.');
-                    return;
-                }
-                updateTaskDetails(id, { shop: newShop });
-                setEditingShopId(null);
-            };
-            // --- Fin de Handlers de edición ---
-
-
-            const handleTaskInputChange = (e) => {
-                setErrorMessage('');
-                const value = e.target.value;
-                setTaskInput(value);
-                if (value === "OTHER_CUSTOM_TASK") {
-                    setIsCustomTask(true);
-                } else {
-                    setIsCustomTask(false);
-                    setCustomTaskName('');
-                }
-            };
-            
-            const handleCustomTaskNameChange = (e) => {
-                setErrorMessage('');
-                setCustomTaskName(e.target.value);
-            }
-            
-            const handleShopInputChange = (e) => {
-                setErrorMessage('');
-                setShopInput(e.target.value);
-            }
-
-
-            const addTask = (e) => {
-                e.preventDefault();
-                setErrorMessage('');
-
-                // 1. Determinar el nombre de la tarea
-                let taskName = '';
-                if (isCustomTask) {
-                    taskName = customTaskName.trim();
-                } else {
-                    taskName = taskInput.trim();
-                }
-
-                // 2. Validaciones
-                if (!shopInput) {
-                     setErrorMessage('Por favor, selecciona una tienda.');
-                     return;
-                }
-                if (!taskName) {
-                    setErrorMessage('Por favor, selecciona o ingresa un nombre para la tarea.');
-                    return;
-                }
-                
-                // Generar el nombre completo de la tarea para la validación de duplicados
-                const fullTaskName = `${taskName} [${shopInput}]`;
-                
-                // LÓGICA DE VALIDACIÓN DE DUPLICADOS: Chequea nombre + tienda
-                const isDuplicate = tasks.some(task => 
-                    task.name.toLowerCase() === fullTaskName.toLowerCase()
-                );
-
-                if (isDuplicate) {
-                    setErrorMessage(`La tarea "${fullTaskName}" ya existe. No puedes duplicar Tarea+Tienda.`);
-                    return;
-                }
-                // --- FIN DE LÓGICA DE VALIDACIÓN ---
-
-                const newTask = {
-                    id: Date.now(),
-                    name: fullTaskName, // Guarda el nombre completo (Tarea + [Tienda])
-                    rawTaskName: taskName, // Guarda el nombre sin la tienda 
-                    shop: shopInput, // Guarda el nombre de la tienda
-                    quantity: orderQuantity ? parseInt(orderQuantity) : null,
-                    elapsedTime: 0,
-                    running: false,
-                    lastTime: null
-                };
-                
-                setTasks(prevTasks => [...prevTasks, newTask]);
-                setTaskInput('');
-                setShopInput(''); 
-                setOrderQuantity('');
-                setReportOutput('');
-                setCustomTaskName('');
-                setIsCustomTask(false);
             };
 
             const toggleTimer = (id) => {
@@ -306,69 +668,8 @@
             };
 
             const generateReport = () => {
-                let totalMilliseconds = 0;
-                
-                // Agrupar tareas por tienda para el reporte
-                const tasksByShop = tasks.reduce((acc, task) => {
-                    const shopName = task.shop || 'Sin Tienda'; 
-                    if (!acc[shopName]) {
-                        acc[shopName] = [];
-                    }
-                    acc[shopName].push(task);
-                    return acc;
-                }, {});
-
-
-                let formattedReport = [];
-
-                // Ordenar las tiendas alfabéticamente
-                Object.keys(tasksByShop).sort().forEach(shopName => {
-                    formattedReport.push(`--- ${shopName} ---`);
-                    
-                    tasksByShop[shopName].forEach(task => {
-                        const finalTime = task.running ? task.elapsedTime + (Date.now() - (task.lastTime || Date.now())) : task.elapsedTime;
-                        totalMilliseconds += finalTime;
-                        const totalSeconds = Math.floor(finalTime / 1000);
-                        const hours = Math.floor(totalSeconds / 3600);
-                        const minutes = Math.floor((totalSeconds % 3600) / 60);
-                        const timeString = `${hours}h ${minutes}m`;
-                        const quantityText = task.quantity ? ` (${task.quantity} orders)` : '';
-                        
-                        // Usamos task.rawTaskName si existe, sino task.name para el reporte limpio
-                        const reportTaskName = task.rawTaskName || task.name.replace(` [${shopName}]`, '');
-
-                        formattedReport.push(`${reportTaskName}${quantityText}: ${timeString}`);
-                    });
-                });
-                
-                // Si hay tareas fuera de una tienda (de versiones anteriores), manejarlas
-                if (tasks.some(task => !task.shop)) {
-                     formattedReport.push('--- Tareas Sin Tienda Asignada ---');
-                     tasks.filter(task => !task.shop).forEach(task => {
-                        const finalTime = task.running ? task.elapsedTime + (Date.now() - (task.lastTime || Date.now())) : task.elapsedTime;
-                        totalMilliseconds += finalTime;
-                        const totalSeconds = Math.floor(finalTime / 1000);
-                        const hours = Math.floor(totalSeconds / 3600);
-                        const minutes = Math.floor((totalSeconds % 3600) / 60);
-                        const timeString = `${hours}h ${minutes}m`;
-                        const quantityText = task.quantity ? ` (${task.quantity} orders)` : '';
-                        
-                        formattedReport.push(`${task.name}${quantityText}: ${timeString}`);
-                    });
-                }
-                
-
-                const totalSeconds = Math.floor(totalMilliseconds / 1000);
-                const totalHours = Math.floor(totalSeconds / 3600);
-                const totalMinutes = Math.floor((totalSeconds % 3600) / 60);
-                const totalTimeString = `${totalHours}h ${totalMinutes}m`;
-                
-                const currentDate = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-
-                const reportContent = `End of Day Report: ${currentDate}
-Hours worked: ${totalTimeString}
-
-Today I worked on the following tasks:\n${formattedReport.join('\n')}`;
+                // LLAMA A LA FUNCIÓN EXTERNA y solo maneja el estado
+                const reportContent = generateEODRContent(tasks);
 
                 setReportOutput(reportContent);
 
@@ -392,210 +693,37 @@ Today I worked on the following tasks:\n${formattedReport.join('\n')}`;
                 });
             };
 
+
             return (
                 <div className="max-w-xl w-full bg-gray-800 rounded-2xl shadow-xl p-8 space-y-6">
                     <h1 className="text-4xl font-extrabold text-white text-center">
                         Task Manager TL
                     </h1>
                     
-                    {/* Task input section */}
-                    <form onSubmit={addTask} className="flex flex-col gap-4">
-                        <div className="flex flex-col gap-2 w-full">
+                    {/* Task input section - Usando el nuevo componente */}
+                    <TaskInputForm
+                        tasks={tasks}
+                        setTasks={setTasks}
+                        shopOptions={shopOptions}
+                        taskOptions={taskOptions}
+                        orderQuantity={orderQuantity}
+                        setOrderQuantity={setOrderQuantity}
+                        setReportOutput={setReportOutput}
+                        errorMessage={errorMessage}
+                        setErrorMessage={setErrorMessage}
+                    />
 
-                            {/* Campo de selección de Tienda */}
-                             <select
-                                value={shopInput}
-                                onChange={handleShopInputChange}
-                                className="flex-1 px-5 py-3 border-2 border-yellow-600 bg-gray-700 text-yellow-300 rounded-full focus:outline-none focus:ring-4 focus:ring-yellow-500 transition-all font-semibold"
-                                required
-                            >
-                                <option value="" disabled>--- Seleccionar Tienda ---</option>
-                                {shopOptions.map(option => (
-                                    <option key={option} value={option}>{option}</option>
-                                ))}
-                            </select>
-                            
-                            {!isCustomTask && (
-                                <select
-                                    value={taskInput}
-                                    onChange={handleTaskInputChange}
-                                    className="flex-1 px-5 py-3 border-2 border-gray-600 bg-gray-700 text-white rounded-full focus:outline-none focus:ring-4 focus:ring-blue-500 transition-all"
-                                    required={!isCustomTask}
-                                >
-                                    <option value="" disabled>Seleccionar tarea</option>
-                                    {taskOptions.map(option => (
-                                        <option key={option} value={option}>{option}</option>
-                                    ))}
-                                    <option value="OTHER_CUSTOM_TASK">Otra (Especificar)</option>
-                                </select>
-                            )}
-
-                            {isCustomTask && (
-                                <input
-                                    type="text"
-                                    value={customTaskName}
-                                    onChange={handleCustomTaskNameChange}
-                                    placeholder="Ingresa el nombre de la tarea"
-                                    className="flex-1 px-5 py-3 border-2 border-gray-600 bg-gray-700 text-white rounded-full focus:outline-none focus:ring-4 focus:ring-blue-500 transition-all"
-                                    required={isCustomTask}
-                                />
-                            )}
-
-                            <input
-                                type="number"
-                                value={orderQuantity}
-                                onChange={(e) => setOrderQuantity(e.target.value)}
-                                placeholder="Cantidad de Órdenes (opcional)"
-                                className="flex-1 px-5 py-3 border-2 border-gray-600 bg-gray-700 text-white rounded-full focus:outline-none focus:ring-4 focus:ring-blue-500 transition-all"
-                            />
-                        </div>
-                        
-                        {/* Mensaje de error de duplicado/validación */}
-                        {errorMessage && (
-                            <p className="text-red-400 font-medium bg-red-900/50 p-3 rounded-xl text-center transition-all duration-300">
-                                {errorMessage}
-                            </p>
-                        )}
-                        
-                        <button
-                            type="submit"
-                            className="bg-blue-600 text-white px-6 py-3 rounded-full font-semibold hover:bg-blue-700 transition duration-300 shadow-lg w-full sm:w-auto"
-                        >
-                            Agregar Tarea
-                        </button>
-                        {isCustomTask && (
-                            <button
-                                type="button"
-                                onClick={() => { setIsCustomTask(false); setTaskInput(''); setCustomTaskName(''); setErrorMessage(''); }}
-                                className="text-gray-400 hover:text-white mt-2 transition duration-300"
-                            >
-                                Cancelar Tarea Personalizada
-                            </button>
-                        )}
-                    </form>
-
-                    {/* Task list section */}
-                    <div className="space-y-4">
-                        {tasks.length > 0 ? (
-                            tasks.map((task) => (
-                                <div key={task.id} className={`flex items-center justify-between bg-gray-700 p-5 rounded-xl shadow-md ${task.running ? 'border-l-4 border-green-500' : 'border-l-4 border-gray-600'}`}>
-                                    <div className="flex flex-col gap-1">
-                                        
-                                        {/* Tienda con funcionalidad de edición */}
-                                        {editingShopId === task.id ? (
-                                            <select
-                                                value={editingShop}
-                                                onChange={(e) => setEditingShop(e.target.value)}
-                                                onBlur={() => handleShopEdit(task.id, editingShop)}
-                                                onKeyPress={(e) => {
-                                                    if (e.key === 'Enter') {
-                                                        e.preventDefault();
-                                                        handleShopEdit(task.id, editingShop);
-                                                    }
-                                                }}
-                                                className="px-2 py-1 border-b-2 border-yellow-500 bg-gray-700 text-yellow-300 font-semibold focus:outline-none w-32 rounded"
-                                                autoFocus
-                                            >
-                                                <option value="" disabled>Selecciona...</option>
-                                                {shopOptions.map(option => (
-                                                    <option key={option} value={option}>{option}</option>
-                                                ))}
-                                            </select>
-                                        ) : (
-                                            <span
-                                                className="font-bold text-yellow-300 text-sm cursor-pointer hover:text-yellow-200 transition-colors"
-                                                onClick={() => {
-                                                    setEditingShopId(task.id);
-                                                    setEditingShop(task.shop || '');
-                                                }}
-                                            >
-                                                {task.shop || 'Sin Tienda'}
-                                            </span>
-                                        )}
-
-
-                                        <span className="font-medium text-gray-300 text-lg">
-                                            {task.rawTaskName || task.name}
-                                        </span>
-                                        
-                                        {/* Quantity display with edit functionality */}
-                                        {editingQuantityId === task.id ? (
-                                            <input
-                                                type="number"
-                                                value={editingQuantity}
-                                                onChange={(e) => setEditingQuantity(e.target.value)}
-                                                onBlur={() => handleQuantityEdit(task.id, editingQuantity)}
-                                                onKeyPress={(e) => {
-                                                    if (e.key === 'Enter') {
-                                                        e.preventDefault();
-                                                        handleQuantityEdit(task.id, editingQuantity);
-                                                    }
-                                                }}
-                                                className="font-mono text-lg text-gray-400 border-b-2 border-blue-500 bg-gray-700 focus:outline-none w-24"
-                                                autoFocus
-                                            />
-                                        ) : (
-                                            <span
-                                                className="font-mono text-base text-gray-400 cursor-pointer hover:text-white transition-colors"
-                                                onClick={() => {
-                                                    setEditingQuantityId(task.id);
-                                                    setEditingQuantity(task.quantity || '');
-                                                }}
-                                            >
-                                                {task.quantity ? `${task.quantity} órdenes` : '(sin cantidad)'}
-                                            </span>
-                                        )}
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        {/* Time display with edit functionality */}
-                                        {editingTaskId === task.id ? (
-                                            <input
-                                                type="text"
-                                                value={editingTime}
-                                                onChange={(e) => setEditingTime(e.target.value)}
-                                                onBlur={() => handleTimeEdit(task.id, editingTime)}
-                                                onKeyPress={(e) => {
-                                                    if (e.key === 'Enter') {
-                                                        e.preventDefault();
-                                                        handleTimeEdit(task.id, editingTime);
-                                                    }
-                                                }}
-                                                placeholder="HH:MM:SS"
-                                                className="font-mono text-xl text-gray-400 border-b-2 border-blue-500 bg-gray-700 focus:outline-none w-28"
-                                                autoFocus
-                                            />
-                                        ) : (
-                                            <span
-                                                className="font-mono text-xl text-white cursor-pointer hover:text-blue-400 transition-colors"
-                                                onClick={() => {
-                                                    setEditingTaskId(task.id);
-                                                    setEditingTime(formatTime(task.elapsedTime));
-                                                }}
-                                            >
-                                                {formatTime(task.running ? task.elapsedTime + (Date.now() - (task.lastTime || Date.now())) : task.elapsedTime)}
-                                            </span>
-                                        )}
-                                        <button
-                                            onClick={() => toggleTimer(task.id)}
-                                            className={`px-5 py-2 rounded-full text-white font-semibold transition duration-300 shadow-md ${task.running ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'}`}
-                                        >
-                                            {task.running ? 'Detener' : 'Iniciar'}
-                                        </button>
-                                        <button
-                                            onClick={() => deleteTask(task.id)}
-                                            className="p-3 text-gray-400 hover:text-red-500 transition duration-300"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-                                                <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 112 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </div>
-                            ))
-                        ) : (
-                            <p className="text-center text-gray-400 italic">Aún no hay tareas. Agrega una para empezar.</p>
-                        )}
-                    </div>
+                    {/* Task list section - Usando el nuevo componente */}
+                    <TaskList
+                        tasks={tasks}
+                        toggleTimer={toggleTimer}
+                        deleteTask={deleteTask}
+                        updateTaskDetails={updateTaskDetails}
+                        formatTime={formatTime}
+                        shopOptions={shopOptions}
+                        errorMessage={errorMessage}
+                        setErrorMessage={setErrorMessage}
+                    />
 
                     <hr className="border-t border-gray-600" />
 
@@ -636,4 +764,3 @@ Today I worked on the following tasks:\n${formattedReport.join('\n')}`;
     </script>
 </body>
 </html>
-
