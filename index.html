@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -22,6 +22,7 @@
         const { useState, useEffect } = React;
 
         // --- 1. DATOS CONSTANTES Y UTILS ---
+        // Tiendas según tu configuración original: Tienda General eliminada.
         const shopOptions = [
             "Tienda Lujosa",
             "Clara Tienda",
@@ -31,6 +32,7 @@
         // Nombre de la tarea predeterminada para Clara Tienda
         const CLARA_TIENDA_TASK_NAME = "Órdenes / Tarea Única";
 
+        // Tareas según tu configuración original: Pending Orders 2 eliminados.
         const taskOptions = [
             "Columna CONFIRMADO",
             "Columna POR UPSELL",
@@ -66,7 +68,7 @@
         const generateEODRContent = (tasks) => {
             let totalMilliseconds = 0;
             
-            // 1. Agrupar tareas por tienda
+            // 1. Agrupar tareas por tienda (y ordenar por tienda en el reporte)
             const tasksByShop = tasks.reduce((acc, task) => {
                 // Si la tarea está corriendo, calcula el tiempo finalizado hasta ahora
                 const finalTime = task.running ? task.elapsedTime + (Date.now() - (task.lastTime || Date.now())) : task.elapsedTime;
@@ -147,7 +149,8 @@ Today I worked on the following tasks:\n${formattedReport.join('\n')}`;
             
             const handleShopEdit = (id, newShop) => {
                 setErrorMessage('');
-                if (isClaraTiendaFixedTask) return; // Evitar la edición si es Clara Tienda Tarea Única
+                // Si es la tarea fija, la edición se bloquea.
+                if (isClaraTiendaFixedTask) return; 
 
                 if (!newShop) {
                     setErrorMessage('La tienda no puede estar vacía.');
@@ -186,7 +189,7 @@ Today I worked on the following tasks:\n${formattedReport.join('\n')}`;
                             </select>
                         ) : (
                             <span
-                                className={`font-bold text-sm transition-colors ${isClaraTiendaFixedTask ? 'text-yellow-500 cursor-default' : 'text-yellow-300 cursor-pointer hover:text-yellow-200'}`}
+                                className={`font-bold text-sm transition-colors text-yellow-300 ${isClaraTiendaFixedTask ? 'cursor-default' : 'cursor-pointer hover:text-yellow-200'}`}
                                 onClick={() => {
                                     if (!isClaraTiendaFixedTask) { // Solo permitir edición si NO es la tarea fija
                                         setEditingShopId(task.id);
@@ -288,7 +291,7 @@ Today I worked on the following tasks:\n${formattedReport.join('\n')}`;
         }
 
         // --- 3. COMPONENTE: TaskList (Contenedor de lista) ---
-        const TaskList = ({ tasks, toggleTimer, deleteTask, updateTaskDetails, formatTime, shopOptions, errorMessage, setErrorMessage }) => {
+        const TaskList = ({ tasks, toggleTimer, deleteTask, updateTaskDetails, formatTime, shopOptions, errorMessage, setErrorMessage, sortTasksByShop }) => {
             // Estados para edición, movidos aquí para centralizar la gestión de la edición de ítems
             const [editingTaskId, setEditingTaskId] = useState(null);
             const [editingTime, setEditingTime] = useState('');
@@ -300,6 +303,14 @@ Today I worked on the following tasks:\n${formattedReport.join('\n')}`;
             return (
                 <div className="space-y-4">
                     <hr className="border-t border-gray-600" />
+                    <div className="flex justify-end">
+                        <button
+                            onClick={sortTasksByShop}
+                            className="bg-gray-600 text-white px-4 py-2 text-sm rounded-full font-semibold hover:bg-gray-700 transition duration-300 shadow-lg"
+                        >
+                            Ordenar por Tienda
+                        </button>
+                    </div>
                     {tasks.length > 0 ? (
                         tasks.map((task) => (
                            <TaskListItem
@@ -544,7 +555,12 @@ Today I worked on the following tasks:\n${formattedReport.join('\n')}`;
                 try {
                     const savedTasks = JSON.parse(localStorage.getItem('tasks'));
                     if (savedTasks) {
-                        setTasks(savedTasks);
+                        // Al cargar, aseguramos que la propiedad shop exista para la ordenación
+                        const loadedTasks = savedTasks.map(task => ({
+                            ...task,
+                            shop: task.shop || (task.name.match(/\[([^\]]+)\]/)?.[1] || 'Sin Tienda') // Retrocompatibilidad si shop no existe
+                        }));
+                        setTasks(loadedTasks);
                     }
                     const savedReports = JSON.parse(localStorage.getItem('reports'));
                     if (savedReports) {
@@ -666,6 +682,29 @@ Today I worked on the following tasks:\n${formattedReport.join('\n')}`;
                 setTasks(prevTasks => prevTasks.filter(task => task.id !== id));
                 setReportOutput('');
             };
+            
+            // NUEVA FUNCIÓN: Ordenar tareas por tienda
+            const sortTasksByShop = () => {
+                setTasks(prevTasks => {
+                    // Crea una copia de la lista para no mutar el estado directamente
+                    const sortedTasks = [...prevTasks];
+                    
+                    // Compara por nombre de tienda (shop) en orden alfabético
+                    sortedTasks.sort((a, b) => {
+                        const shopA = a.shop.toUpperCase();
+                        const shopB = b.shop.toUpperCase();
+                        if (shopA < shopB) {
+                            return -1;
+                        }
+                        if (shopA > shopB) {
+                            return 1;
+                        }
+                        return 0; // Mantener el orden relativo si las tiendas son iguales
+                    });
+
+                    return sortedTasks;
+                });
+            };
 
             const generateReport = () => {
                 // LLAMA A LA FUNCIÓN EXTERNA y solo maneja el estado
@@ -723,6 +762,7 @@ Today I worked on the following tasks:\n${formattedReport.join('\n')}`;
                         shopOptions={shopOptions}
                         errorMessage={errorMessage}
                         setErrorMessage={setErrorMessage}
+                        sortTasksByShop={sortTasksByShop} // Pasar la nueva función
                     />
 
                     <hr className="border-t border-gray-600" />
@@ -762,5 +802,8 @@ Today I worked on the following tasks:\n${formattedReport.join('\n')}`;
 
         ReactDOM.render(<App />, document.getElementById('root'));
     </script>
+</body>
+</html>
+
 </body>
 </html>
