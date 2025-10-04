@@ -1,443 +1,425 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Task Manager TL</title>
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    body {
-      font-family: 'Inter', sans-serif;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager TL</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
 </head>
 <body class="bg-gray-900 flex items-center justify-center min-h-screen p-4">
 
-  <div id="root"></div>
+    <div id="root"></div>
 
-  <script type="text/babel">
-    const { useState, useEffect } = React;
+    <script type="text/babel">
+        const { useState, useEffect } = React;
 
-    const App = () => {
-      const [tasks, setTasks] = useState([]);
-      const [taskInput, setTaskInput] = useState('');
-      const [orderQuantity, setOrderQuantity] = useState('');
-      const [reportOutput, setReportOutput] = useState('');
-      const [pastReports, setPastReports] = useState([]);
-      const [editingTaskId, setEditingTaskId] = useState(null);
-      const [editingTime, setEditingTime] = useState('');
-      const [editingQuantityId, setEditingQuantityId] = useState(null);
-      const [editingQuantity, setEditingQuantity] = useState('');
-      const [customTaskName, setCustomTaskName] = useState(''); // New state for custom task input
-      const [isCustomTask, setIsCustomTask] = useState(false); // State to toggle custom input
+        const App = () => {
+            const [tasks, setTasks] = useState([]);
+            const [taskInput, setTaskInput] = useState('');
+            const [shopInput, setShopInput] = useState(''); // Nuevo estado para la tienda
+            const [orderQuantity, setOrderQuantity] = useState('');
+            const [reportOutput, setReportOutput] = useState('');
+            const [pastReports, setPastReports] = useState([]);
+            const [editingTaskId, setEditingTaskId] = useState(null);
+            const [editingTime, setEditingTime] = useState('');
+            const [editingQuantityId, setEditingQuantityId] = useState(null);
+            const [editingQuantity, setEditingQuantity] = useState('');
+            const [customTaskName, setCustomTaskName] = useState('');
+            const [isCustomTask, setIsCustomTask] = useState(false);
+            const [errorMessage, setErrorMessage] = useState('');
 
-      const taskOptions = [
-        "Columna CONFIRMADO",
-        "Columna POR UPSELL",
-        "Columna DATOS ENTREGA",
-        "Columna RESPONDER",
-        "Columna FALLIDO",
-        "Columna REMINDER",
-        "Columna PENDIENTE",
-        "Chat en vivo (filtro Abiertos)",
-        "Chat en vivo (filtro Pendiente)",
-        "Ordenes confirmadas sheet (CHECK info)",
-        "CHAT Pending Orders (Pending Orders 1)",
-        "CALL Pending Orders (Pending Orders 1)",
-        "Clara Tienda",
-        "Facebook/Instagram Comments & Chats",
-        "Meeting"
-      ];
+            // Lista de tiendas para seleccionar (puedes modificar esta lista)
+            const shopOptions = [
+                "Tienda Lujosa",
+                "Clara Tienda",
+                "Clara Tierra",
+                "Tienda General"
+            ];
 
-      // Load data from localStorage on initial render
-      useEffect(() => {
-        try {
-          const savedTasks = JSON.parse(localStorage.getItem('tasks'));
-          if (savedTasks) {
-            setTasks(savedTasks);
-          }
-          const savedReports = JSON.parse(localStorage.getItem('reports'));
-          if (savedReports) {
-            setPastReports(savedReports);
-          }
-        } catch (e) {
-          console.error("Error loading from localStorage", e);
-        }
-      }, []);
+            const taskOptions = [
+                "Columna CONFIRMADO",
+                "Columna POR UPSELL",
+                "Columna DATOS ENTREGA",
+                "Columna RESPONDER",
+                "Columna FALLIDO",
+                "Columna REMINDER",
+                "Columna PENDIENTE",
+                "Chat en vivo (filtro Abiertos)",
+                "Chat en vivo (filtro Pendiente)",
+                "Ordenes confirmadas sheet (CHECK info)",
+                "CHAT Pending Orders (Pending Orders 1)",
+                "CALL Pending Orders (Pending Orders 1)",
+                "Facebook/Instagram Comments & Chats",
+                "Meeting"
+            ];
 
-      // Save tasks to localStorage when they change
-      useEffect(() => {
-        try {
-          localStorage.setItem('tasks', JSON.stringify(tasks));
-        } catch (e) {
-          console.error("Error saving tasks to localStorage", e);
-        }
-      }, [tasks]);
+            // Load data from localStorage on initial render
+            useEffect(() => {
+                try {
+                    const savedTasks = JSON.parse(localStorage.getItem('tasks'));
+                    if (savedTasks) {
+                        setTasks(savedTasks);
+                    }
+                    const savedReports = JSON.parse(localStorage.getItem('reports'));
+                    if (savedReports) {
+                        setPastReports(savedReports);
+                    }
+                } catch (e) {
+                    console.error("Error loading from localStorage", e);
+                }
+            }, []);
 
-      // Save reports to localStorage when they change
-      useEffect(() => {
-        try {
-          localStorage.setItem('reports', JSON.stringify(pastReports));
-        } catch (e) {
-          console.error("Error saving reports to localStorage", e);
-        }
-      }, [pastReports]);
+            // Save tasks to localStorage when they change
+            useEffect(() => {
+                try {
+                    localStorage.setItem('tasks', JSON.stringify(tasks));
+                } catch (e) {
+                    console.error("Error saving tasks to localStorage", e);
+                }
+            }, [tasks]);
 
-      // Timer update loop
-      useEffect(() => {
-        const timerInterval = setInterval(() => {
-          setTasks(currentTasks =>
-            currentTasks.map(task => {
-              if (task.running) {
-                const currentTime = Date.now();
-                const currentElapsed = task.elapsedTime + (currentTime - task.lastTime);
-                return { ...task, elapsedTime: currentElapsed, lastTime: currentTime };
-              }
-              return task;
-            })
-          );
-        }, 1000);
+            // Save reports to localStorage when they change
+            useEffect(() => {
+                try {
+                    localStorage.setItem('reports', JSON.stringify(pastReports));
+                } catch (e) {
+                    console.error("Error saving reports to localStorage", e);
+                }
+            }, [pastReports]);
 
-        return () => clearInterval(timerInterval);
-      }, []);
+            // Timer update loop
+            useEffect(() => {
+                const timerInterval = setInterval(() => {
+                    setTasks(currentTasks =>
+                        currentTasks.map(task => {
+                            if (task.running) {
+                                const currentTime = Date.now();
+                                const currentElapsed = task.elapsedTime + (currentTime - task.lastTime);
+                                return { ...task, elapsedTime: currentElapsed, lastTime: currentTime };
+                            }
+                            return task;
+                        })
+                    );
+                }, 1000);
 
-      const formatTime = (ms) => {
-        if (ms < 0) return '00:00:00';
-        const totalSeconds = Math.floor(ms / 1000);
-        const hours = Math.floor(totalSeconds / 3600);
-        const minutes = Math.floor((totalSeconds % 3600) / 60);
-        const seconds = totalSeconds % 60;
-        const pad = (num) => String(num).padStart(2, '0');
-        return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
-      };
+                return () => clearInterval(timerInterval);
+            }, []);
 
-      const handleTimeEdit = (id, time) => {
-        const parts = time.split(':').map(Number);
-        if (parts.length === 3 && !parts.some(isNaN)) {
-          const totalMs = (parts[0] * 3600 + parts[1] * 60 + parts[2]) * 1000;
-          setTasks(prevTasks =>
-            prevTasks.map(task =>
-              task.id === id ? { ...task, elapsedTime: totalMs } : task
-            )
-          );
-          setEditingTaskId(null);
-        }
-      };
+            const formatTime = (ms) => {
+                if (ms < 0) return '00:00:00';
+                const totalSeconds = Math.floor(ms / 1000);
+                const hours = Math.floor(totalSeconds / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const seconds = totalSeconds % 60;
+                const pad = (num) => String(num).padStart(2, '0');
+                return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+            };
 
-      const handleQuantityEdit = (id, quantity) => {
-        const newQuantity = parseInt(quantity);
-        setTasks(prevTasks =>
-          prevTasks.map(task =>
-            task.id === id ? { ...task, quantity: newQuantity || null } : task
-          )
-        );
-        setEditingQuantityId(null);
-      };
+            const handleTimeEdit = (id, time) => {
+                const parts = time.split(':').map(Number);
+                if (parts.length === 3 && !parts.some(isNaN)) {
+                    const totalMs = (parts[0] * 3600 + parts[1] * 60 + parts[2]) * 1000;
+                    setTasks(prevTasks =>
+                        prevTasks.map(task =>
+                            task.id === id ? { ...task, elapsedTime: totalMs } : task
+                        )
+                    );
+                    setEditingTaskId(null);
+                }
+            };
 
-      const handleTaskInputChange = (e) => {
-        const value = e.target.value;
-        setTaskInput(value);
-        if (value === "OTHER_CUSTOM_TASK") {
-          setIsCustomTask(true);
-        } else {
-          setIsCustomTask(false);
-          setCustomTaskName(''); // Clear custom input if a standard task is selected
-        }
-      };
+            const handleQuantityEdit = (id, quantity) => {
+                const newQuantity = parseInt(quantity);
+                setTasks(prevTasks =>
+                    prevTasks.map(task =>
+                        task.id === id ? { ...task, quantity: newQuantity || null } : task
+                    )
+                );
+                setEditingQuantityId(null);
+            };
 
-      const addTask = (e) => {
-        e.preventDefault();
-        
-        let taskName = '';
-        if (isCustomTask) {
-          taskName = customTaskName.trim();
-        } else {
-          taskName = taskInput.trim();
-        }
-
-        if (!taskName) return;
-
-        const newTask = {
-          id: Date.now(),
-          name: taskName,
-          quantity: orderQuantity ? parseInt(orderQuantity) : null,
-          elapsedTime: 0,
-          running: false,
-          lastTime: null
-        };
-        
-        setTasks(prevTasks => [...prevTasks, newTask]);
-        setTaskInput('');
-        setOrderQuantity('');
-        setReportOutput('');
-        setCustomTaskName('');
-        setIsCustomTask(false);
-      };
-
-      const toggleTimer = (id) => {
-        setTasks(prevTasks =>
-          prevTasks.map(task => {
-            // Stop any other running timers
-            if (task.running && task.id !== id) {
-              return { ...task, running: false, elapsedTime: task.elapsedTime + (Date.now() - task.lastTime), lastTime: null };
+            const handleTaskInputChange = (e) => {
+                setErrorMessage('');
+                const value = e.target.value;
+                setTaskInput(value);
+                if (value === "OTHER_CUSTOM_TASK") {
+                    setIsCustomTask(true);
+                } else {
+                    setIsCustomTask(false);
+                    setCustomTaskName('');
+                }
+            };
+            
+            const handleCustomTaskNameChange = (e) => {
+                setErrorMessage('');
+                setCustomTaskName(e.target.value);
             }
-            // Toggle the selected task's timer
-            if (task.id === id) {
-              const newRunningState = !task.running;
-              const newElapsedTime = newRunningState ? task.elapsedTime : task.elapsedTime + (Date.now() - task.lastTime);
-              return {
-                ...task,
-                running: newRunningState,
-                elapsedTime: newElapsedTime,
-                lastTime: newRunningState ? Date.now() : null,
-              };
+            
+            const handleShopInputChange = (e) => {
+                setErrorMessage('');
+                setShopInput(e.target.value);
             }
-            return task;
-          })
-        );
-      };
 
-      const deleteTask = (id) => {
-        setTasks(prevTasks => prevTasks.filter(task => task.id !== id));
-        setReportOutput('');
-      };
 
-      const generateReport = () => {
-        let totalMilliseconds = 0;
-        const formattedReport = tasks.map(task => {
-          const finalTime = task.running ? task.elapsedTime + (Date.now() - task.lastTime) : task.elapsedTime;
-          totalMilliseconds += finalTime;
-          const totalSeconds = Math.floor(finalTime / 1000);
-          const hours = Math.floor(totalSeconds / 3600);
-          const minutes = Math.floor((totalSeconds % 3600) / 60);
-          const timeString = `${hours}h ${minutes}m`;
-          const quantityText = task.quantity ? ` (${task.quantity} orders)` : '';
-          
-          return `${task.name}${quantityText}: ${timeString}`;
-        });
+            const addTask = (e) => {
+                e.preventDefault();
+                setErrorMessage('');
 
-        const totalSeconds = Math.floor(totalMilliseconds / 1000);
-        const totalHours = Math.floor(totalSeconds / 3600);
-        const totalMinutes = Math.floor((totalSeconds % 3600) / 60);
-        const totalTimeString = `${totalHours}h ${totalMinutes}m`;
-        
-        const currentDate = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                // 1. Determinar el nombre de la tarea
+                let taskName = '';
+                if (isCustomTask) {
+                    taskName = customTaskName.trim();
+                } else {
+                    taskName = taskInput.trim();
+                }
 
-        const reportContent = `End of Day Report: ${currentDate}
+                // 2. Validaciones
+                if (!shopInput) {
+                     setErrorMessage('Por favor, selecciona una tienda.');
+                     return;
+                }
+                if (!taskName) {
+                    setErrorMessage('Por favor, selecciona o ingresa un nombre para la tarea.');
+                    return;
+                }
+                
+                // Generar el nombre completo de la tarea para la validación de duplicados
+                const fullTaskName = `${taskName} [${shopInput}]`;
+                
+                // LÓGICA DE VALIDACIÓN DE DUPLICADOS: Chequea nombre + tienda
+                const isDuplicate = tasks.some(task => 
+                    task.name.toLowerCase() === fullTaskName.toLowerCase()
+                );
+
+                if (isDuplicate) {
+                    setErrorMessage(`La tarea "${fullTaskName}" ya existe. No puedes duplicar Tarea+Tienda.`);
+                    return;
+                }
+                // --- FIN DE LÓGICA DE VALIDACIÓN ---
+
+                const newTask = {
+                    id: Date.now(),
+                    name: fullTaskName, // Guarda el nombre completo (Tarea + [Tienda])
+                    rawTaskName: taskName, // Guarda el nombre sin la tienda (opcional, pero útil)
+                    shop: shopInput, // Guarda el nombre de la tienda
+                    quantity: orderQuantity ? parseInt(orderQuantity) : null,
+                    elapsedTime: 0,
+                    running: false,
+                    lastTime: null
+                };
+                
+                setTasks(prevTasks => [...prevTasks, newTask]);
+                setTaskInput('');
+                setShopInput(''); // Limpia la selección de tienda
+                setOrderQuantity('');
+                setReportOutput('');
+                setCustomTaskName('');
+                setIsCustomTask(false);
+            };
+
+            const toggleTimer = (id) => {
+                setTasks(prevTasks =>
+                    prevTasks.map(task => {
+                        // Stop any other running timers
+                        if (task.running && task.id !== id) {
+                            return { 
+                                ...task, 
+                                running: false, 
+                                elapsedTime: task.elapsedTime + (Date.now() - (task.lastTime || Date.now())), 
+                                lastTime: null 
+                            };
+                        }
+                        // Toggle the selected task's timer
+                        if (task.id === id) {
+                            const newRunningState = !task.running;
+                            const newElapsedTime = newRunningState ? task.elapsedTime : task.elapsedTime + (Date.now() - (task.lastTime || Date.now()));
+                            return {
+                                ...task,
+                                running: newRunningState,
+                                elapsedTime: newElapsedTime,
+                                lastTime: newRunningState ? Date.now() : null,
+                            };
+                        }
+                        return task;
+                    })
+                );
+            };
+
+            const deleteTask = (id) => {
+                setTasks(prevTasks => prevTasks.filter(task => task.id !== id));
+                setReportOutput('');
+            };
+
+            const generateReport = () => {
+                let totalMilliseconds = 0;
+                
+                // Agrupar tareas por tienda para el reporte
+                const tasksByShop = tasks.reduce((acc, task) => {
+                    // Asegurar que task.shop exista, si no, usa 'Sin Tienda'
+                    const shopName = task.shop || 'Sin Tienda'; 
+                    if (!acc[shopName]) {
+                        acc[shopName] = [];
+                    }
+                    acc[shopName].push(task);
+                    return acc;
+                }, {});
+
+
+                let formattedReport = [];
+
+                // Ordenar las tiendas alfabéticamente
+                Object.keys(tasksByShop).sort().forEach(shopName => {
+                    formattedReport.push(`--- ${shopName} ---`);
+                    
+                    tasksByShop[shopName].forEach(task => {
+                        const finalTime = task.running ? task.elapsedTime + (Date.now() - (task.lastTime || Date.now())) : task.elapsedTime;
+                        totalMilliseconds += finalTime;
+                        const totalSeconds = Math.floor(finalTime / 1000);
+                        const hours = Math.floor(totalSeconds / 3600);
+                        const minutes = Math.floor((totalSeconds % 3600) / 60);
+                        const timeString = `${hours}h ${minutes}m`;
+                        const quantityText = task.quantity ? ` (${task.quantity} orders)` : '';
+                        
+                        // Usamos task.rawTaskName si existe, sino task.name para el reporte limpio
+                        // También eliminamos la parte de la tienda si no usamos rawTaskName
+                        const reportTaskName = task.rawTaskName || task.name.replace(` [${shopName}]`, '');
+
+                        formattedReport.push(`${reportTaskName}${quantityText}: ${timeString}`);
+                    });
+                });
+                
+                // Si hay tareas fuera de una tienda (de versiones anteriores), manejarlas
+                if (tasks.some(task => !task.shop)) {
+                     formattedReport.push('--- Tareas Sin Tienda Asignada ---');
+                     tasks.filter(task => !task.shop).forEach(task => {
+                        const finalTime = task.running ? task.elapsedTime + (Date.now() - (task.lastTime || Date.now())) : task.elapsedTime;
+                        totalMilliseconds += finalTime;
+                        const totalSeconds = Math.floor(finalTime / 1000);
+                        const hours = Math.floor(totalSeconds / 3600);
+                        const minutes = Math.floor((totalSeconds % 3600) / 60);
+                        const timeString = `${hours}h ${minutes}m`;
+                        const quantityText = task.quantity ? ` (${task.quantity} orders)` : '';
+                        
+                        formattedReport.push(`${task.name}${quantityText}: ${timeString}`);
+                    });
+                }
+                
+
+                const totalSeconds = Math.floor(totalMilliseconds / 1000);
+                const totalHours = Math.floor(totalSeconds / 3600);
+                const totalMinutes = Math.floor((totalSeconds % 3600) / 60);
+                const totalTimeString = `${totalHours}h ${totalMinutes}m`;
+                
+                const currentDate = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+                const reportContent = `End of Day Report: ${currentDate}
 Hours worked: ${totalTimeString}
+
 Today I worked on the following tasks:\n${formattedReport.join('\n')}`;
 
-        setReportOutput(reportContent);
+                setReportOutput(reportContent);
 
-        // Save report to history
-        const reportDocId = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-        const newReport = {
-          id: reportDocId,
-          date: new Date().toISOString(),
-          content: reportContent
-        };
+                // Save report to history
+                const reportDocId = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+                const newReport = {
+                    id: reportDocId,
+                    date: new Date().toISOString(),
+                    content: reportContent
+                };
 
-        setPastReports(prevReports => {
-          // Find and replace if a report for today already exists
-          const existingReportIndex = prevReports.findIndex(report => report.id === reportDocId);
-          if (existingReportIndex > -1) {
-            const updatedReports = [...prevReports];
-            updatedReports[existingReportIndex] = newReport;
-            return updatedReports;
-          }
-          return [...prevReports, newReport].sort((a, b) => b.id.localeCompare(a.id));
-        });
-      };
+                setPastReports(prevReports => {
+                    // Find and replace if a report for today already exists
+                    const existingReportIndex = prevReports.findIndex(report => report.id === reportDocId);
+                    if (existingReportIndex > -1) {
+                        const updatedReports = [...prevReports];
+                        updatedReports[existingReportIndex] = newReport;
+                        return updatedReports;
+                    }
+                    return [...prevReports, newReport].sort((a, b) => b.id.localeCompare(a.id));
+                });
+            };
 
-      return (
-        <div className="max-w-xl w-full bg-gray-800 rounded-2xl shadow-xl p-8 space-y-6">
-          <h1 className="text-4xl font-extrabold text-white text-center">
-            Task manager TL
-          </h1>
-          {/* Task input section */}
-          <form onSubmit={addTask} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2 w-full">
-              
-              {!isCustomTask && (
-                <select
-                  value={taskInput}
-                  onChange={handleTaskInputChange}
-                  className="flex-1 px-5 py-3 border-2 border-gray-600 bg-gray-700 text-white rounded-full focus:outline-none focus:ring-4 focus:ring-blue-500 transition-all"
-                  required={!isCustomTask}
-                >
-                  <option value="" disabled>Select task</option>
-                  {taskOptions.map(option => (
-                    <option key={option} value={option}>{option}</option>
-                  ))}
-                  <option value="OTHER_CUSTOM_TASK">Other (Specify)</option>
-                </select>
-              )}
+            return (
+                <div className="max-w-xl w-full bg-gray-800 rounded-2xl shadow-xl p-8 space-y-6">
+                    <h1 className="text-4xl font-extrabold text-white text-center">
+                        Task Manager TL
+                    </h1>
+                    
+                    {/* Task input section */}
+                    <form onSubmit={addTask} className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-2 w-full">
 
-              {isCustomTask && (
-                <input
-                  type="text"
-                  value={customTaskName}
-                  onChange={(e) => setCustomTaskName(e.target.value)}
-                  placeholder="Enter custom task name"
-                  className="flex-1 px-5 py-3 border-2 border-gray-600 bg-gray-700 text-white rounded-full focus:outline-none focus:ring-4 focus:ring-blue-500 transition-all"
-                  required={isCustomTask}
-                />
-              )}
+                            {/* Campo de selección de Tienda */}
+                             <select
+                                value={shopInput}
+                                onChange={handleShopInputChange}
+                                className="flex-1 px-5 py-3 border-2 border-yellow-600 bg-gray-700 text-yellow-300 rounded-full focus:outline-none focus:ring-4 focus:ring-yellow-500 transition-all font-semibold"
+                                required
+                            >
+                                <option value="" disabled>--- Seleccionar Tienda ---</option>
+                                {shopOptions.map(option => (
+                                    <option key={option} value={option}>{option}</option>
+                                ))}
+                            </select>
+                            
+                            {!isCustomTask && (
+                                <select
+                                    value={taskInput}
+                                    onChange={handleTaskInputChange}
+                                    className="flex-1 px-5 py-3 border-2 border-gray-600 bg-gray-700 text-white rounded-full focus:outline-none focus:ring-4 focus:ring-blue-500 transition-all"
+                                    required={!isCustomTask}
+                                >
+                                    <option value="" disabled>Seleccionar tarea</option>
+                                    {taskOptions.map(option => (
+                                        <option key={option} value={option}>{option}</option>
+                                    ))}
+                                    <option value="OTHER_CUSTOM_TASK">Otra (Especificar)</option>
+                                </select>
+                            )}
 
-              <input
-                type="number"
-                value={orderQuantity}
-                onChange={(e) => setOrderQuantity(e.target.value)}
-                placeholder="Quantity (optional)"
-                className="flex-1 px-5 py-3 border-2 border-gray-600 bg-gray-700 text-white rounded-full focus:outline-none focus:ring-4 focus:ring-blue-500 transition-all"
-              />
-            </div>
-            <button
-              type="submit"
-              className="bg-blue-600 text-white px-6 py-3 rounded-full font-semibold hover:bg-blue-700 transition duration-300 shadow-lg w-full sm:w-auto"
-            >
-              Add Task
-            </button>
-            {isCustomTask && (
-              <button
-                type="button"
-                onClick={() => { setIsCustomTask(false); setTaskInput(''); setCustomTaskName(''); }}
-                className="text-gray-400 hover:text-white mt-2 transition duration-300"
-              >
-                Cancel Custom Task
-              </button>
-            )}
-          </form>
+                            {isCustomTask && (
+                                <input
+                                    type="text"
+                                    value={customTaskName}
+                                    onChange={handleCustomTaskNameChange}
+                                    placeholder="Ingresa el nombre de la tarea"
+                                    className="flex-1 px-5 py-3 border-2 border-gray-600 bg-gray-700 text-white rounded-full focus:outline-none focus:ring-4 focus:ring-blue-500 transition-all"
+                                    required={isCustomTask}
+                                />
+                            )}
 
-          {/* Task list section */}
-          <div className="space-y-4">
-            {tasks.length > 0 ? (
-              tasks.map((task) => (
-                <div key={task.id} className="flex items-center justify-between bg-gray-700 p-5 rounded-xl shadow-md">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4">
-                    <span className="font-medium text-gray-300 text-lg">
-                      {task.name}
-                    </span>
-                    {/* Quantity display with edit functionality */}
-                    {editingQuantityId === task.id ? (
-                      <input
-                        type="number"
-                        value={editingQuantity}
-                        onChange={(e) => setEditingQuantity(e.target.value)}
-                        onBlur={() => handleQuantityEdit(task.id, editingQuantity)}
-                        onKeyPress={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            handleQuantityEdit(task.id, editingQuantity);
-                          }
-                        }}
-                        className="font-mono text-lg text-gray-400 border-b-2 border-blue-500 bg-gray-700 focus:outline-none w-20"
-                      />
-                    ) : (
-                      <span
-                        className="font-mono text-lg text-gray-400 cursor-pointer"
-                        onClick={() => {
-                          setEditingQuantityId(task.id);
-                          setEditingQuantity(task.quantity || '');
-                        }}
-                      >
-                        {task.quantity ? `${task.quantity} orders` : '(no quantity)'}
-                      </span>
-                    )}
-
-                    {/* Time display with edit functionality */}
-                    {editingTaskId === task.id ? (
-                      <input
-                        type="text"
-                        value={editingTime}
-                        onChange={(e) => setEditingTime(e.target.value)}
-                        onBlur={() => handleTimeEdit(task.id, editingTime)}
-                        onKeyPress={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            handleTimeEdit(task.id, editingTime);
-                          }
-                        }}
-                        className="font-mono text-xl text-gray-400 border-b-2 border-blue-500 bg-gray-700 focus:outline-none"
-                      />
-                    ) : (
-                      <span
-                        className="font-mono text-xl text-gray-400 cursor-pointer"
-                        onClick={() => {
-                          setEditingTaskId(task.id);
-                          setEditingTime(formatTime(task.elapsedTime));
-                        }}
-                      >
-                        {formatTime(task.elapsedTime)}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => toggleTimer(task.id)}
-                      className={`px-5 py-2 rounded-full text-white font-semibold transition duration-300 shadow-md ${task.running ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'}`}
-                    >
-                      {task.running ? 'Stop' : 'Start'}
-                    </button>
-                    <button
-                      onClick={() => deleteTask(task.id)}
-                      className="p-3 text-gray-400 hover:text-red-500 transition duration-300"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 112 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-center text-gray-400 italic">No tasks yet. Add one to begin.</p>
-            )}
-          </div>
-
-          <hr className="border-t border-gray-600" />
-
-          {/* Report section */}
-          <div className="flex flex-col items-center">
-            <button
-              onClick={generateReport}
-              className="bg-purple-600 text-white px-6 py-3 rounded-full font-semibold hover:bg-purple-700 transition duration-300 shadow-lg mb-4"
-            >
-              Generate E.O.D.R.
-            </button>
-            <div className="w-full bg-gray-700 text-gray-200 rounded-xl p-5 font-mono text-sm whitespace-pre-wrap">
-              {reportOutput || 'The end-of-day report will appear here...'}
-            </div>
-          </div>
-
-          {/* Past reports section */}
-          <hr className="border-t border-gray-600" />
-          <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-center text-white">Report History</h2>
-            {pastReports.length > 0 ? (
-              pastReports.map((report) => (
-                <div key={report.id} className="bg-gray-700 rounded-xl p-5 shadow-md">
-                  <pre className="font-mono text-sm text-gray-200 whitespace-pre-wrap">
-                    {report.content}
-                  </pre>
-                </div>
-              ))
-            ) : (
-              <p className="text-center text-gray-400 italic">No past reports.</p>
-            )}
-          </div>
-        </div>
-      );
-    };
-
-    ReactDOM.render(<App />, document.getElementById('root'));
-  </script>
-</body>
-</html>
-
-
-
-
+                            <input
+                                type="number"
+                                value={orderQuantity}
+                                onChange={(e) => setOrderQuantity(e.target.value)}
+                                placeholder="Cantidad de Órdenes (opcional)"
+                                className="flex-1 px-5 py-3 border-2 border-gray-600 bg-gray-700 text-white rounded-full focus:outline-none focus:ring-4 focus:ring-blue-500 transition-all"
+                            />
+                        </div>
+                        
+                        {/* Mensaje de error de duplicado/validación */}
+                        {errorMessage && (
+                            <p className="text-red-400 font-medium bg-red-900/50 p-3 rounded-xl text-center transition-all duration-300">
+                                {errorMessage}
+                            </p>
+                        )}
+                        
+                        <button
+                            type="submit"
+                            className="bg-blue-600 text-white px-6 py-3 rounded-full font-semibold hover:bg-blue-700 transition duration-300 shadow-lg w-full sm:w-auto"
+                        >
+                            Agregar Tarea
+                        </button>
+                        {isCustomTask && (
+                            <button
+                                type="button"
+                                onClick={() => { setIsCustomTask(false); setTaskInput(''); setCustomTaskName(''); setErrorMessage(''); }}
+                                className="text-gray-400 hover:text-white
