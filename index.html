@@ -732,30 +732,7 @@ Today I worked on the following tasks:\n${formattedReport.join('\n')}`;
                 });
             };
             
-            // FUNCIÓN AGREGADA: Asigna 45 segundos (45000ms) a la primera tarea
-            const setFirstTaskTime = () => {
-                setTasks(prevTasks => {
-                    if (prevTasks.length === 0) {
-                        setErrorMessage('No hay tareas para establecer el tiempo.');
-                        return prevTasks;
-                    }
-                    
-                    const firstTaskId = prevTasks[0].id;
-
-                    return prevTasks.map(task => {
-                        if (task.id === firstTaskId) {
-                            return {
-                                ...task,
-                                elapsedTime: 45000, // 45 segundos en milisegundos
-                                running: false, // Asegura que esté detenido
-                                lastTime: null
-                            };
-                        }
-                        return task;
-                    });
-                });
-                setErrorMessage('');
-            };
+            
 
 
             return (
