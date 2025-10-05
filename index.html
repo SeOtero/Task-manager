@@ -801,13 +801,7 @@ Today I worked on the following tasks:\n${formattedReport.join('\n')}`;
                             Generar E.O.D.R.
                         </button>
                         
-                        {/* BOTÓN DE PRUEBA AÑADIDO */}
-                        <button
-                            onClick={setFirstTaskTime}
-                            className="bg-red-500 text-white px-4 py-2 rounded-full font-semibold text-xs hover:bg-red-600 transition duration-300 shadow-lg mb-4 w-full sm:w-auto"
-                        >
-                            Set 45s (Prueba)
-                        </button>
+    
 
                         <div className="w-full bg-gray-700 text-gray-200 rounded-xl p-5 font-mono text-sm whitespace-pre-wrap">
                             {reportOutput || 'El reporte de fin de día aparecerá aquí...'}
