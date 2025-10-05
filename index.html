@@ -164,8 +164,8 @@ Today I worked on the following tasks:\n${formattedReport.join('\n')}`;
             const currentElapsedTime = task.running ? task.elapsedTime + (Date.now() - (task.lastTime || Date.now())) : task.elapsedTime;
             
             return (
-                <div key={task.id} className={`flex items-center justify-between gap-4 bg-gray-700 p-5 rounded-xl shadow-md ${task.running ? 'border-l-4 border-green-500' : 'border-l-4 border-gray-600'}`}>
-                    <div className="flex flex-col gap-1 min-w-0 flex-grow">
+                <div key={task.id} className={`flex flex-wrap items-center justify-between gap-3 sm:gap-4 bg-gray-700 p-4 sm:p-5 rounded-xl shadow-md ${task.running ? 'border-l-4 border-green-500' : 'border-l-4 border-gray-600'}`}>
+                    <div className="flex flex-col gap-1 min-w-0 flex-grow w-full sm:w-auto">
                         
                         {/* Tienda con funcionalidad de edición */}
                         {editingShopId === task.id && !isClaraTiendaFixedTask ? (
@@ -240,7 +240,7 @@ Today I worked on the following tasks:\n${formattedReport.join('\n')}`;
                         )}
                     </div>
                     {/* BLOQUE DE CONTROL: Tiempo, Iniciar/Detener, Eliminar */}
-                    <div className="flex items-center gap-4 flex-shrink-0"> 
+                    <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0 mt-2 sm:mt-0"> 
                         {/* Time display with edit functionality */}
                         {editingTaskId === task.id ? (
                             <input
@@ -255,7 +255,7 @@ Today I worked on the following tasks:\n${formattedReport.join('\n')}`;
                                     }
                                 }}
                                 placeholder="HH:MM:SS"
-                                className="font-mono text-xl text-gray-400 border-b-2 border-blue-500 bg-gray-700 focus:outline-none w-28"
+                                className="font-mono text-xl text-gray-400 border-b-2 border-blue-500 bg-gray-700 focus:outline-none w-24 sm:w-28"
                                 autoFocus
                             />
                         ) : (
@@ -273,15 +273,15 @@ Today I worked on the following tasks:\n${formattedReport.join('\n')}`;
                         )}
                         <button
                             onClick={() => toggleTimer(task.id)}
-                            className={`px-5 py-2 rounded-full text-white font-semibold transition duration-300 shadow-md ${task.running ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'}`}
+                            className={`px-4 py-2 sm:px-5 sm:py-2 rounded-full text-white font-semibold text-sm transition duration-300 shadow-md ${task.running ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'}`}
                         >
                             {task.running ? 'Detener' : 'Iniciar'}
                         </button>
                         <button
                             onClick={() => deleteTask(task.id)}
-                            className="p-3 text-gray-400 hover:text-red-500 transition duration-300"
+                            className="p-2 sm:p-3 text-gray-400 hover:text-red-500 transition duration-300"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" viewBox="0 0 20 20" fill="currentColor">
                                 <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 112 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" />
                             </svg>
                         </button>
@@ -731,11 +731,36 @@ Today I worked on the following tasks:\n${formattedReport.join('\n')}`;
                     return [...prevReports, newReport].sort((a, b) => b.id.localeCompare(a.id));
                 });
             };
+            
+            // FUNCIÓN AGREGADA: Asigna 45 segundos (45000ms) a la primera tarea
+            const setFirstTaskTime = () => {
+                setTasks(prevTasks => {
+                    if (prevTasks.length === 0) {
+                        setErrorMessage('No hay tareas para establecer el tiempo.');
+                        return prevTasks;
+                    }
+                    
+                    const firstTaskId = prevTasks[0].id;
+
+                    return prevTasks.map(task => {
+                        if (task.id === firstTaskId) {
+                            return {
+                                ...task,
+                                elapsedTime: 45000, // 45 segundos en milisegundos
+                                running: false, // Asegura que esté detenido
+                                lastTime: null
+                            };
+                        }
+                        return task;
+                    });
+                });
+                setErrorMessage('');
+            };
 
 
             return (
-                <div className="max-w-xl w-full bg-gray-800 rounded-2xl shadow-xl p-8 space-y-6">
-                    <h1 className="text-4xl font-extrabold text-white text-center">
+                <div className="max-w-md w-full bg-gray-800 rounded-2xl shadow-xl p-4 sm:p-6 space-y-4 sm:space-y-6">
+                    <h1 className="text-3xl sm:text-4xl font-extrabold text-white text-center">
                         Task Manager TL
                     </h1>
                     
@@ -771,10 +796,19 @@ Today I worked on the following tasks:\n${formattedReport.join('\n')}`;
                     <div className="flex flex-col items-center">
                         <button
                             onClick={generateReport}
-                            className="bg-purple-600 text-white px-6 py-3 rounded-full font-semibold hover:bg-purple-700 transition duration-300 shadow-lg mb-4"
+                            className="bg-purple-600 text-white px-6 py-3 rounded-full font-semibold hover:bg-purple-700 transition duration-300 shadow-lg mb-4 w-full sm:w-auto"
                         >
                             Generar E.O.D.R.
                         </button>
+                        
+                        {/* BOTÓN DE PRUEBA AÑADIDO */}
+                        <button
+                            onClick={setFirstTaskTime}
+                            className="bg-red-500 text-white px-4 py-2 rounded-full font-semibold text-xs hover:bg-red-600 transition duration-300 shadow-lg mb-4 w-full sm:w-auto"
+                        >
+                            Set 45s (Prueba)
+                        </button>
+
                         <div className="w-full bg-gray-700 text-gray-200 rounded-xl p-5 font-mono text-sm whitespace-pre-wrap">
                             {reportOutput || 'El reporte de fin de día aparecerá aquí...'}
                         </div>
