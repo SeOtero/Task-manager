@@ -1,811 +1,502 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Task Manager TL</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Task Manager TL - Refactored</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&family=Creepster&family=Mountains+of+Christmas:wght@700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
+            width: 100vw; 
+            height: 100vh;
+            overflow-x: hidden; 
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
         }
+        .font-creepster { font-family: 'Creepster', cursive; }
+        .font-christmas { font-family: 'Mountains of Christmas', cursive; }
+    
+        .app-container {
+            min-height: 100vh;
+            padding-top: max(1rem, env(safe-area-inset-top)); 
+            padding-bottom: max(1rem, env(safe-area-inset-bottom)); 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hide-scrollbar::-webkit-scrollbar { width: 0px; background: transparent; }
+        .hide-scrollbar { scrollbar-width: none; }
+
+        /* --- Animación de Brillo (Glow) Halloween --- */
+        @keyframes subtle-container-glow {
+            0%, 100% { box-shadow: 0 0 15px rgba(255, 140, 0, 0.4), 0 0 5px rgba(128, 0, 128, 0.2); }
+            50% { box-shadow: 0 0 25px rgba(255, 165, 0, 0.7), 0 0 10px rgba(255, 215, 0, 0.5); }
+        }
+        .glow-card {
+            animation: subtle-container-glow 6s infinite ease-in-out alternate;
+            position: relative; 
+            overflow: hidden;
+            border: 1px solid rgba(50, 50, 50, 0.5); 
+        }
+
+        /* --- Animación de Brillo Festivo (Party Glow) --- */
+        @keyframes party-container-glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(217, 70, 239, 0.5), 0 0 8px rgba(34, 211, 238, 0.4); } /* Fucsia y Cian */
+            50% { box-shadow: 0 0 30px rgba(244, 63, 94, 0.7), 0 0 15px rgba(6, 182, 212, 0.6); } /* Rosa y Cian brillante */
+        }
+        .party-glow-card {
+            animation: party-container-glow 5s infinite ease-in-out alternate;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(120, 80, 150, 0.5);
+        }
+        
+        /* --- Estilos de Partículas (Niebla) --- */
+        @keyframes particle-drift-and-fade {
+            0% { transform: translate(0, 0) scale(0.8); opacity: 0; }
+            25% { transform: translate(calc(var(--rand-x) * 0.25px), 25vh) scale(1); opacity: 0.5; }
+            50% { transform: translate(calc(var(--rand-x) * 1.2px), 50vh) scale(1.1); opacity: 0.3; }
+            75% { transform: translate(calc(var(--rand-x) * 0.5px), 75vh) scale(0.9); opacity: 0.1; }
+            100% { transform: translate(calc(var(--rand-x) * 0.1px), 100vh) scale(0.5); opacity: 0; }
+        }
+        .particle {
+            position: fixed; top: -10px; background-color: rgba(255, 165, 0, 0.4); 
+            border-radius: 50%; box-shadow: 0 0 5px rgba(255, 165, 0, 0.6); 
+            pointer-events: none; z-index: 1; 
+        }
+        .animate-particle { animation: particle-drift-and-fade var(--duration) linear infinite; }
+        
+        /* --- Estilos de Confeti (Fiesta) --- */
+        @keyframes confetti-fall {
+            0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+        }
+        .confetti {
+            position: fixed;
+            top: 0;
+            pointer-events: none;
+            z-index: 1;
+            animation: confetti-fall var(--duration) linear infinite;
+            animation-delay: var(--delay);
+        }
+
+        /* --- Estilos de Telaraña --- */
+        .spider-web {
+            position: absolute; top: 0; left: 0; width: 150px; height: 150px;
+            pointer-events: none; z-index: 2; opacity: 0.5;
+        }
+        .spider-web:before, .spider-web:after {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            border-radius: 50%; border: 2px solid rgba(150, 150, 150, 0.4); 
+            box-sizing: border-box; mix-blend-mode: screen;
+        }
+        .spider-web:before {
+            transform: rotate(45deg) scaleX(0.5) translate(-10%, 10%);
+            border-radius: 0; border-top: none; border-right: none;
+            clip-path: polygon(0 0, 100% 0, 100% 50%, 0% 100%);
+        }
+        .spider-web:after {
+            transform: rotate(-45deg) scaleX(0.5) translate(-10%, -10%);
+            border-radius: 0; border-top: none; border-left: none;
+            clip-path: polygon(100% 0, 0 0, 0 50%, 100% 100%);
+        }
+        .spider-web .line1, .spider-web .line2 {
+            content: ''; position: absolute; background: rgba(150, 150, 150, 0.4);
+        }
+        .spider-web .line1 { width: 120px; height: 2px; top: 0; left: 0; transform-origin: top left; transform: rotate(25deg); }
+        .spider-web .line2 { width: 120px; height: 2px; top: 0; left: 0; transform-origin: top left; transform: rotate(-25deg); }
+
+        /* --- NUEVO: Estilos de Nieve (Navidad) --- */
+        @keyframes snowfall {
+            0% { transform: translateY(-10vh) translateX(0); }
+            100% { transform: translateY(110vh) translateX(calc(var(--drift) * 15vw)); }
+        }
+        .snowflake {
+            position: fixed; top: 0; background: white; border-radius: 50%;
+            pointer-events: none; z-index: 1; opacity: 0.8;
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+            animation: snowfall var(--duration) linear infinite;
+            animation-delay: var(--delay);
+        }
+
+        /* --- NUEVO: Estilos de Luces (Navidad) --- */
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.6; transform: scale(0.9); }
+            50% { opacity: 1; transform: scale(1.1); }
+        }
+        .christmas-light {
+            position: fixed; border-radius: 50%;
+            animation: twinkle var(--duration) ease-in-out infinite alternate;
+            z-index: 1; pointer-events: none;
+        }
+
+        /* --- NUEVO: Estilos de Fantasma (Halloween) --- */
+        @keyframes float-ghost {
+            0% { transform: translate(var(--start-x), 100vh) scale(1); opacity: 0; }
+            20% { opacity: 0.6; }
+            80% { opacity: 0.6; }
+            100% { transform: translate(var(--end-x), -20vh) scale(1.1); opacity: 0; }
+        }
+        .ghost {
+            position: fixed; bottom: -150px; z-index: 1;
+            pointer-events: none;
+            animation: float-ghost var(--duration) ease-in-out infinite;
+            animation-delay: var(--delay);
+            fill: rgba(255, 255, 255, 0.1);
+            filter: drop-shadow(0 0 15px rgba(200, 220, 255, 0.6));
+        }
+
     </style>
 </head>
-<body class="bg-gray-900 flex items-center justify-center min-h-screen p-4">
+<body class="bg-gray-900 transition-colors duration-500">
 
-    <div id="root"></div>
+    <div id="root" class="app-container"></div>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useMemo, useCallback } = React;
 
-        // --- 1. DATOS CONSTANTES Y UTILS ---
-        // Tiendas según tu configuración original: Tienda General eliminada.
-        const shopOptions = [
-            "Tienda Lujosa",
-            "Clara Tienda",
-            "Clara Tierra",
+        // --- SECTION: CONSTANTS AND CONFIGURATION ---
+        const birthdaysList = [
+            { name: "Seba", date: "12-08" },
+            { name: "Bianca", date: "12-18" },
+            //{ name: "Mica", date: "10-14" },
         ];
+        
+        const themes = {
+            default: { bodyBg: 'bg-gray-900', cardBg: 'bg-gray-800', itemBg: 'bg-gray-700', primaryText: 'text-white', secondaryText: 'text-gray-300', accentText: 'text-yellow-300', buttonAdd: 'bg-blue-600 hover:bg-blue-700', buttonAction: 'bg-purple-600 hover:bg-purple-700', inputBorder: 'border-gray-600 focus:ring-blue-500', shopSelectBorder: 'border-yellow-600 focus:ring-yellow-500', titleFont: '' },
+            halloween: { bodyBg: 'bg-gray-950', cardBg: 'bg-[#0a0a0a] shadow-2xl', itemBg: 'bg-gray-800/40 border border-gray-700/60', primaryText: 'text-orange-500', secondaryText: 'text-gray-300', accentText: 'text-yellow-400', buttonAdd: 'bg-orange-600 hover:bg-orange-700 text-white', buttonAction: 'bg-purple-700 hover:bg-purple-800 text-white', inputBorder: 'border-gray-700 focus:ring-orange-500', shopSelectBorder: 'border-orange-500 focus:ring-orange-400', titleFont: 'font-creepster tracking-widest' },
+            christmas: { bodyBg: 'bg-red-900', cardBg: 'bg-green-900/90 backdrop-blur-sm', itemBg: 'bg-green-800/50 border border-yellow-300/30', primaryText: 'text-white', secondaryText: 'text-gray-200', accentText: 'text-yellow-300', buttonAdd: 'bg-red-600 hover:bg-red-700 text-white', buttonAction: 'bg-yellow-500 hover:bg-yellow-600 text-green-900', inputBorder: 'border-red-400 focus:ring-red-300', shopSelectBorder: 'border-yellow-400 focus:ring-yellow-300', titleFont: 'font-christmas' },
+            party: { bodyBg: 'bg-black', cardBg: 'bg-gray-900/80 backdrop-blur-sm', itemBg: 'bg-gray-800/50 border border-purple-500/30', primaryText: 'text-fuchsia-400', secondaryText: 'text-gray-200', accentText: 'text-cyan-400', buttonAdd: 'bg-fuchsia-600 hover:bg-fuchsia-700 text-white', buttonAction: 'bg-cyan-500 hover:bg-cyan-600 text-white', inputBorder: 'border-gray-600 focus:ring-fuchsia-500', shopSelectBorder: 'border-cyan-500 focus:ring-cyan-400', titleFont: 'font-bold' }
+        };
 
-        // Nombre de la tarea predeterminada para Clara Tienda
+        const shopOptions = ["Tienda Lujosa", "Clara Tienda", "Clara Tierra"];
         const CLARA_TIENDA_TASK_NAME = "Órdenes / Tarea Única";
-
-        // Tareas según tu configuración original: Pending Orders 2 eliminados.
-        const taskOptions = [
-            "Columna CONFIRMADO",
-            "Columna POR UPSELL",
-            "Columna DATOS ENTREGA",
-            "Columna RESPONDER",
-            "Columna FALLIDO",
-            "Columna REMINDER",
-            "Columna PENDIENTE",
-            "Chat en vivo (filtro Abiertos)",
-            "Chat en vivo (filtro Pendiente)",
-            "Ordenes confirmadas sheet (CHECK info)",
-            "CHAT Pending Orders",
-            "CALL Pending Orders",
-            "Facebook/Instagram Comments & Chats",
-            "Meeting"
-        ];
-
+        const taskOptions = ["Columna CONFIRMADO", "Columna POR UPSELL", "Columna DATOS ENTREGA", "Columna RESPONDER", "Columna FALLIDO", "Columna REMINDER", "Columna PENDIENTE", "Chat en vivo (filtro Abiertos)", "Chat en vivo (filtro Pendiente)", "Ordenes confirmadas sheet (CHECK info)", "CHAT Pending Orders (Pending Orders 1)", "CALL Pending Orders (Pending Orders 1)", "Facebook/Instagram Comments & Chats", "Meeting"];
+        
+        // --- SECTION: UTILITY FUNCTIONS ---
         const formatTime = (ms) => {
             if (ms < 0) return '00:00:00';
             const totalSeconds = Math.floor(ms / 1000);
-            const hours = Math.floor(totalSeconds / 3600);
-            const minutes = Math.floor((totalSeconds % 3600) / 60);
-            const seconds = totalSeconds % 60;
-            const pad = (num) => String(num).padStart(2, '0');
-            return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+            const hours = Math.floor(totalSeconds / 3600).toString().padStart(2, '0');
+            const minutes = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0');
+            const seconds = (totalSeconds % 60).toString().padStart(2, '0');
+            return `${hours}:${minutes}:${seconds}`;
         };
-        
-        /**
-         * Genera el contenido de texto para el reporte E.O.D.R. (End of Day Report).
-         * @param {Array<Object>} tasks - La lista de tareas activas.
-         * @returns {string} El contenido formateado del reporte.
-         */
+
         const generateEODRContent = (tasks) => {
             let totalMilliseconds = 0;
-            
-            // 1. Agrupar tareas por tienda (y ordenar por tienda en el reporte)
             const tasksByShop = tasks.reduce((acc, task) => {
-                // Si la tarea está corriendo, calcula el tiempo finalizado hasta ahora
                 const finalTime = task.running ? task.elapsedTime + (Date.now() - (task.lastTime || Date.now())) : task.elapsedTime;
-                
-                const shopName = task.shop || 'Sin Tienda'; 
-                if (!acc[shopName]) {
-                    acc[shopName] = [];
-                }
+                const shopName = task.shop || 'Sin Tienda';
+                if (!acc[shopName]) acc[shopName] = [];
                 acc[shopName].push({ ...task, finalTime });
                 totalMilliseconds += finalTime;
                 return acc;
             }, {});
 
             let formattedReport = [];
-
-            // 2. Formatear reporte por tienda
             Object.keys(tasksByShop).sort().forEach(shopName => {
                 formattedReport.push(`--- ${shopName} ---`);
-                
                 tasksByShop[shopName].forEach(task => {
                     const totalSeconds = Math.floor(task.finalTime / 1000);
                     const hours = Math.floor(totalSeconds / 3600);
                     const minutes = Math.floor((totalSeconds % 3600) / 60);
                     const timeString = `${hours}h ${minutes}m`;
                     const quantityText = task.quantity ? ` (${task.quantity} orders)` : '';
-                    
-                    // Usar el nombre de la tarea sin la tienda
                     const reportTaskName = task.rawTaskName || task.name.replace(` [${shopName}]`, '');
-
                     formattedReport.push(`${reportTaskName}${quantityText}: ${timeString}`);
                 });
             });
 
-            // 3. Calcular tiempo total
             const totalSeconds = Math.floor(totalMilliseconds / 1000);
             const totalHours = Math.floor(totalSeconds / 3600);
             const totalMinutes = Math.floor((totalSeconds % 3600) / 60);
             const totalTimeString = `${totalHours}h ${totalMinutes}m`;
-            
             const currentDate = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-
-            // 4. Construir reporte final
-            const reportContent = `End of Day Report: ${currentDate}
-Hours worked: ${totalTimeString}
-
-Today I worked on the following tasks:\n${formattedReport.join('\n')}`;
-            
-            return reportContent;
+            return `End of Day Report: ${currentDate}\nHours worked: ${totalTimeString}\n\nToday I worked on the following tasks:\n${formattedReport.join('\n')}`;
         };
 
+        // --- SECTION: CUSTOM HOOKS ---
+        const usePersistentState = (key, initialValue) => {
+            const [state, setState] = useState(() => {
+                try {
+                    const item = window.localStorage.getItem(key);
+                    return item ? JSON.parse(item) : initialValue;
+                } catch (error) { console.error("Error reading from localStorage", error); return initialValue; }
+            });
+            useEffect(() => {
+                try { window.localStorage.setItem(key, JSON.stringify(state)); } catch (error) { console.error("Error writing to localStorage", error); }
+            }, [key, state]);
+            return [state, setState];
+        };
 
-        // --- 2. COMPONENTE: TaskListItem (Tarea individual) ---
-        const TaskListItem = ({ task, toggleTimer, deleteTask, updateTaskDetails, formatTime, shopOptions, errorMessage, setErrorMessage, setEditingTaskId, setEditingTime, setEditingQuantityId, setEditingQuantity, setEditingShopId, setEditingShop, editingTaskId, editingTime, editingQuantityId, editingQuantity, editingShopId, editingShop }) => {
-            
-            // Determina si la tienda es Clara Tienda con tarea única
-            const isClaraTiendaFixedTask = task.rawTaskName === CLARA_TIENDA_TASK_NAME;
+        const useCelebration = (birthdays) => {
+            const checkBirthday = useCallback((birthdays) => {
+                const today = new Date();
+                const todayFormatted = `${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
+                const found = birthdays.find(b => b.date === todayFormatted);
+                return found ? found.name : null;
+            }, []);
+            const celebration = useMemo(() => {
+                const today = new Date();
+                const month = today.getMonth() + 1;
+                const birthdayName = checkBirthday(birthdays);
+                if (birthdayName) return { theme: 'party', message: `¡Feliz Cumpleaños ${birthdayName}! 🎉`, icon: 'party' };
+                if (month === 10) return { theme: 'halloween', message: '¡Feliz Halloween!', icon: 'halloween' };
+                if (month === 12) return { theme: 'christmas', message: '¡Feliz Navidad!', icon: 'christmas' };
+                return { theme: 'default', message: '', icon: 'default' };
+            }, [birthdays, checkBirthday]);
+            const themeClasses = useMemo(() => themes[celebration.theme] || themes.default, [celebration.theme]);
+            return { celebration, themeClasses };
+        };
 
-            // Handlers de edición
-            const handleTimeEdit = (id, time) => {
+        const useTasks = () => {
+            const [tasks, setTasks] = usePersistentState('tasks', []);
+            const [errorMessage, setErrorMessage] = useState('');
+            useEffect(() => {
+                const interval = setInterval(() => {
+                    setTasks(currentTasks => currentTasks.map(t => t.running ? { ...t, elapsedTime: t.elapsedTime + (Date.now() - t.lastTime), lastTime: Date.now() } : t));
+                }, 1000);
+                return () => clearInterval(interval);
+            }, [setTasks]);
+            const addTask = useCallback((taskData) => {
+                const { shopInput, taskName, orderQuantity } = taskData;
+                if (!shopInput || !taskName) { setErrorMessage('Completa todos los campos.'); return false; }
+                const fullTaskName = `${taskName} [${shopInput}]`;
+                if (tasks.some(t => t.name.toLowerCase() === fullTaskName.toLowerCase())) { setErrorMessage(`La tarea "${fullTaskName}" ya existe.`); return false; }
+                const newTask = { id: Date.now(), name: fullTaskName, rawTaskName: taskName, shop: shopInput, quantity: orderQuantity ? parseInt(orderQuantity) : null, elapsedTime: 0, running: false, lastTime: null };
+                setTasks(prev => [...prev, newTask]);
                 setErrorMessage('');
-                const parts = time.split(':').map(Number);
-                if (parts.length === 3 && !parts.some(isNaN)) {
-                    const totalMs = (parts[0] * 3600 + parts[1] * 60 + parts[2]) * 1000;
-                    updateTaskDetails(id, { elapsedTime: totalMs });
-                    setEditingTaskId(null);
-                } else {
-                     setEditingTaskId(null); 
-                     // setErrorMessage('Formato de tiempo inválido. Usa HH:MM:SS.'); 
+                return true;
+            }, [tasks, setTasks]);
+            const deleteTask = useCallback((id) => setTasks(prev => prev.filter(t => t.id !== id)), [setTasks]);
+            const toggleTimer = useCallback((id) => {
+                setTasks(prev => {
+                    const now = Date.now();
+                    return prev.map(t => {
+                        if (t.running && t.id !== id) return { ...t, running: false, elapsedTime: t.elapsedTime + (now - t.lastTime), lastTime: null };
+                        if (t.id === id) {
+                            const newRunning = !t.running;
+                            return { ...t, running: newRunning, elapsedTime: newRunning ? t.elapsedTime : (t.elapsedTime + (now - t.lastTime)), lastTime: newRunning ? now : null };
+                        }
+                        return t;
+                    });
+                });
+            }, [setTasks]);
+            const updateTaskDetails = useCallback((id, newDetails) => {
+                setTasks(prev => prev.map(t => {
+                    if (t.id === id) {
+                        if (t.rawTaskName === CLARA_TIENDA_TASK_NAME && newDetails.shop && newDetails.shop !== t.shop) { setErrorMessage('No se puede cambiar la tienda de la Tarea Única.'); return t; }
+                        const newFullName = newDetails.shop ? `${t.rawTaskName} [${newDetails.shop}]` : t.name;
+                        if (prev.some(et => et.id !== id && et.name.toLowerCase() === newFullName.toLowerCase())) { setErrorMessage('Esa Tarea+Tienda ya existe.'); return t; }
+                        setErrorMessage('');
+                        return { ...t, ...newDetails, name: newFullName };
+                    }
+                    return t;
+                }));
+            }, [setTasks]);
+            const sortTasksByShop = useCallback(() => setTasks(prev => [...prev].sort((a, b) => a.shop.localeCompare(b.shop))), [setTasks]);
+            return { tasks, errorMessage, setErrorMessage, addTask, deleteTask, toggleTimer, updateTaskDetails, sortTasksByShop };
+        };
+
+        // --- SECTION: UI COMPONENTS ---
+
+        const BackgroundParticles = ({ isHalloween }) => {
+            if (!isHalloween) return null;
+            const particles = useMemo(() => Array.from({ length: 80 }).map((_, i) => ({ key: i, left: `${Math.random() * 100}vw`, size: `${2 + Math.random() * 5}px`, duration: `${20 + Math.random() * 20}s`, delay: `${Math.random() * 15}s`, randX: `${(Math.random() - 0.5) * 350}` })), []);
+            return (<div className="w-full h-full absolute top-0 left-0">{particles.map(p => <div key={p.key} className="particle animate-particle" style={{ left: p.left, width: p.size, height: p.size, '--duration': p.duration, '--rand-x': p.randX, animationDelay: p.delay }} />)}</div>);
+        };
+        
+        const BackgroundConfetti = ({ isParty }) => {
+            if (!isParty) return null;
+            const confettiPieces = useMemo(() => {
+                const colors = ['#f43f5e', '#ec4899', '#8b5cf6', '#38bdf8'];
+                return Array.from({ length: 100 }).map((_, i) => {
+                    const size = Math.random() * 8 + 4; const isSquare = Math.random() > 0.5;
+                    return { key: i, left: `${Math.random() * 100}vw`, width: `${size}px`, height: `${size}px`, backgroundColor: colors[Math.floor(Math.random() * colors.length)], borderRadius: isSquare ? '2px' : '50%', transform: `rotate(${Math.random() * 360}deg)`, '--duration': `${Math.random() * 5 + 5}s`, '--delay': `${Math.random() * 5}s` };
+                });
+            }, []);
+            return (<div className="w-full h-full absolute top-0 left-0 overflow-hidden">{confettiPieces.map(style => <div key={style.key} className="confetti" style={style} />)}</div>);
+        };
+
+        const BackgroundSnow = ({ isChristmas }) => {
+            if (!isChristmas) return null;
+            const snowflakes = useMemo(() => Array.from({ length: 150 }).map((_, i) => {
+                const size = Math.random() * 4 + 2;
+                return { key: i, left: `${Math.random() * 100}vw`, width: `${size}px`, height: `${size}px`, '--duration': `${Math.random() * 10 + 10}s`, '--delay': `${Math.random() * 10}s`, '--drift': Math.random() - 0.5 };
+            }), []);
+            return (<div className="w-full h-full absolute top-0 left-0 overflow-hidden">{snowflakes.map(style => <div key={style.key} className="snowflake" style={style} />)}</div>);
+        };
+
+        const BackgroundChristmasLights = ({ isChristmas }) => {
+            if (!isChristmas) return null;
+            const lights = useMemo(() => {
+                const colors = ['#f44336', '#4caf50', '#2196f3', '#ffeb3b'];
+                return Array.from({ length: 40 }).map((_, i) => {
+                    const size = Math.random() * 10 + 5;
+                    return { key: i, top: `${Math.random() * 100}vh`, left: `${Math.random() * 100}vw`, width: `${size}px`, height: `${size}px`, backgroundColor: colors[i % colors.length], boxShadow: `0 0 15px 5px ${colors[i % colors.length]}66`, '--duration': `${Math.random() * 2 + 1.5}s`, animationDelay: `${Math.random() * 2}s` };
+                });
+            }, []);
+            return (<div className="w-full h-full absolute top-0 left-0">{lights.map(style => <div key={style.key} className="christmas-light" style={style} />)}</div>);
+        };
+        
+        const BackgroundGhost = ({ isHalloween }) => {
+            if (!isHalloween) return null;
+            const ghosts = useMemo(() => Array.from({ length: 5 }).map((_, i) => ({ key: i, '--duration': `${Math.random() * 15 + 10}s`, '--delay': `${Math.random() * 10}s`, '--start-x': `${Math.random() * 80 + 10}vw`, '--end-x': `${Math.random() * 80 + 10}vw`, width: `${Math.random() * 50 + 50}px` })), []);
+            return (<div className="w-full h-full absolute top-0 left-0 overflow-hidden">{ghosts.map(style => (<svg key={style.key} className="ghost" style={style} viewBox="0 0 100 125"><path d="M10 115 C 10 115, 10 95, 20 95 C 30 95, 30 115, 30 115 C 30 115, 30 95, 40 95 C 50 95, 50 115, 50 115 C 50 115, 50 95, 60 95 C 70 95, 70 115, 70 115 C 70 115, 70 95, 80 95 C 90 95, 90 115, 90 115 L 90 60 C 90 20, 50 10, 50 10 C 50 10, 10 20, 10 60 Z M 30 60 C 35 60, 35 50, 30 50 C 25 50, 25 60, 30 60 Z M 70 60 C 75 60, 75 50, 70 50 C 65 50, 65 60, 70 60 Z" /></svg>))}</div>);
+        };
+        
+        const SpiderWeb = ({ isHalloween }) => {
+            if (!isHalloween) return null;
+            return (
+                <>
+                    <div className="spider-web"><div className="line1"></div><div className="line2"></div></div>
+                    <div className="spider-web" style={{ left: 'auto', right: 0, transform: 'scaleX(-1)' }}><div className="line1"></div><div className="line2"></div></div>
+                </>
+            );
+        };
+
+        const Title = ({ themeClasses, celebration }) => { 
+            const shadowStyle = celebration.theme === 'halloween' ? '[text-shadow:0_0_8px_rgba(255,165,0,0.6)]' : celebration.theme === 'party' ? '[text-shadow:0_0_10px_rgba(217,70,239,0.7)]' : '';
+            const renderIcon = (icon) => {
+                switch (icon) {
+                    case 'halloween': return (<><span className="inline-block transform -rotate-12 scale-110 mr-2">👻</span>Task Manager TL<span className="inline-block transform rotate-12 scale-110 ml-2">🎃</span></>);
+                    case 'christmas': return (<><span className="inline-block transform -rotate-12 scale-110 mr-2 text-3xl">🎅</span>Task Manager TL<span className="inline-block transform rotate-12 scale-110 ml-2 text-3xl">🎄</span></>);
+                    case 'party': return (<><span className="inline-block transform -rotate-12 scale-110 mr-2 text-3xl">🎉</span>Task Manager TL<span className="inline-block transform rotate-12 scale-110 ml-2 text-3xl">🎂</span></>);
+                    default: return 'Task Manager TL';
                 }
             };
-
-            const handleQuantityEdit = (id, quantity) => {
-                setErrorMessage('');
-                const newQuantity = parseInt(quantity);
-                updateTaskDetails(id, { quantity: newQuantity || null });
-                setEditingQuantityId(null);
-            };
-            
-            const handleShopEdit = (id, newShop) => {
-                setErrorMessage('');
-                // Si es la tarea fija, la edición se bloquea.
-                if (isClaraTiendaFixedTask) return; 
-
-                if (!newShop) {
-                    setErrorMessage('La tienda no puede estar vacía.');
-                    return;
-                }
-                // updateTaskDetails gestionará la validación de duplicados (Tarea + Tienda)
-                updateTaskDetails(id, { shop: newShop }); 
-                setEditingShopId(null);
-            };
-            
-            const currentElapsedTime = task.running ? task.elapsedTime + (Date.now() - (task.lastTime || Date.now())) : task.elapsedTime;
+            return (
+                <div className="text-center mb-4"><h1 className={`text-4xl font-extrabold transition-colors duration-500 ${themeClasses.primaryText} ${themeClasses.titleFont} ${shadowStyle}`}>{renderIcon(celebration.icon)}</h1>{celebration.message && <p className={`mt-2 text-lg font-semibold animate-pulse ${themeClasses.accentText}`}>{celebration.message}</p>}</div>
+            );
+        };
+        
+        // --- UPDATED COMPONENT ---
+        const TaskListItem = ({ task, toggleTimer, deleteTask, updateTaskDetails, themeClasses }) => {
+            const [isEditingTime, setIsEditingTime] = useState(false); const [editedTime, setEditedTime] = useState(formatTime(task.elapsedTime)); const [isEditingQuantity, setIsEditingQuantity] = useState(false); const [editedQuantity, setEditedQuantity] = useState(task.quantity || ''); const [isEditingShop, setIsEditingShop] = useState(false); const [editedShop, setEditedShop] = useState(task.shop); const currentElapsedTime = task.running ? task.elapsedTime + (Date.now() - (task.lastTime || Date.now())) : task.elapsedTime; const isClaraTiendaFixedTask = task.rawTaskName === CLARA_TIENDA_TASK_NAME;
+            const handleTimeEdit = () => { const parts = editedTime.split(':').map(Number); if (parts.length === 3 && !parts.some(isNaN)) { const totalMs = (parts[0] * 3600 + parts[1] * 60 + parts[2]) * 1000; updateTaskDetails(task.id, { elapsedTime: totalMs }); } setIsEditingTime(false); };
+            const handleQuantityEdit = () => { updateTaskDetails(task.id, { quantity: parseInt(editedQuantity) || null }); setIsEditingQuantity(false); };
+            const handleShopEdit = () => { if (!isClaraTiendaFixedTask && editedShop) updateTaskDetails(task.id, { shop: editedShop }); setIsEditingShop(false); };
             
             return (
-                <div key={task.id} className={`flex flex-wrap items-center justify-between gap-3 sm:gap-4 bg-gray-700 p-4 sm:p-5 rounded-xl shadow-md ${task.running ? 'border-l-4 border-green-500' : 'border-l-4 border-gray-600'}`}>
-                    <div className="flex flex-col gap-1 min-w-0 flex-grow w-full sm:w-auto">
-                        
-                        {/* Tienda con funcionalidad de edición */}
-                        {editingShopId === task.id && !isClaraTiendaFixedTask ? (
-                            <select
-                                value={editingShop}
-                                onChange={(e) => setEditingShop(e.target.value)}
-                                onBlur={() => handleShopEdit(task.id, editingShop)}
-                                onKeyPress={(e) => {
-                                    if (e.key === 'Enter') {
-                                        e.preventDefault();
-                                        handleShopEdit(task.id, editingShop);
-                                    }
-                                }}
-                                className="px-2 py-1 border-b-2 border-yellow-500 bg-gray-700 text-yellow-300 font-semibold focus:outline-none w-32 rounded"
-                                autoFocus
-                            >
-                                <option value="" disabled>Selecciona...</option>
-                                {shopOptions.map(option => (
-                                    <option key={option} value={option}>{option}</option>
-                                ))}
-                            </select>
-                        ) : (
-                            <span
-                                className={`font-bold text-sm transition-colors text-yellow-300 ${isClaraTiendaFixedTask ? 'cursor-default' : 'cursor-pointer hover:text-yellow-200'}`}
-                                onClick={() => {
-                                    if (!isClaraTiendaFixedTask) { // Solo permitir edición si NO es la tarea fija
-                                        setEditingShopId(task.id);
-                                        setEditingShop(task.shop || '');
-                                        setEditingTaskId(null); 
-                                        setEditingQuantityId(null);
-                                    }
-                                }}
-                                title={isClaraTiendaFixedTask ? "No se puede cambiar la tienda de la Tarea Única" : "Click para editar tienda"}
-                            >
-                                {task.shop || 'Sin Tienda'}
-                            </span>
-                        )}
-
-
-                        <span className="font-medium text-gray-300 text-lg break-words">
-                            {task.rawTaskName || task.name}
-                        </span>
-                        
-                        {/* Quantity display with edit functionality */}
-                        {editingQuantityId === task.id ? (
-                            <input
-                                type="number"
-                                value={editingQuantity}
-                                onChange={(e) => setEditingQuantity(e.target.value)}
-                                onBlur={() => handleQuantityEdit(task.id, editingQuantity)}
-                                onKeyPress={(e) => {
-                                    if (e.key === 'Enter') {
-                                        e.preventDefault();
-                                        handleQuantityEdit(task.id, editingQuantity);
-                                    }
-                                }}
-                                className="font-mono text-lg text-gray-400 border-b-2 border-blue-500 bg-gray-700 focus:outline-none w-24"
-                                autoFocus
-                            />
-                        ) : (
-                            <span
-                                className="font-mono text-base text-gray-400 cursor-pointer hover:text-white transition-colors"
-                                onClick={() => {
-                                    setEditingQuantityId(task.id);
-                                    setEditingQuantity(task.quantity || '');
-                                    setEditingTaskId(null); // Asegura que solo se edite una cosa a la vez
-                                    setEditingShopId(null);
-                                }}
-                            >
-                                {task.quantity ? `${task.quantity} órdenes` : '(sin cantidad)'}
-                            </span>
-                        )}
+                // Main container: responsive flex for mobile vs desktop
+                <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 rounded-xl shadow-md ${themeClasses.itemBg} ${task.running ? 'border-l-4 border-green-500' : 'border-l-4 border-gray-600'}`}>
+                    
+                    {/* Details Section */}
+                    <div className="flex flex-col gap-1 min-w-0 flex-grow">
+                        {isEditingShop ? (<select value={editedShop} onChange={(e) => setEditedShop(e.target.value)} onBlur={handleShopEdit} onKeyPress={(e) => e.key === 'Enter' && handleShopEdit()} className={`px-2 py-1 border-b-2 bg-transparent focus:outline-none w-full sm:w-32 rounded ${themeClasses.accentText} border-yellow-500`} autoFocus>{shopOptions.map(o => <option key={o} value={o}>{o}</option>)}</select>) : (<span className={`font-bold text-sm transition-colors ${themeClasses.accentText} ${isClaraTiendaFixedTask ? 'cursor-default' : 'cursor-pointer hover:opacity-80'}`} onClick={() => !isClaraTiendaFixedTask && setIsEditingShop(true)}>{task.shop || 'Sin Tienda'}</span>)}
+                        <span className={`font-medium text-lg break-words ${themeClasses.secondaryText}`}>{task.rawTaskName || task.name}</span>
+                        {isEditingQuantity ? (<input type="number" value={editedQuantity} onChange={(e) => setEditedQuantity(e.target.value)} onBlur={handleQuantityEdit} onKeyPress={(e) => e.key === 'Enter' && handleQuantityEdit()} className={`font-mono text-lg border-b-2 bg-transparent focus:outline-none w-full sm:w-24 ${themeClasses.secondaryText} border-blue-500`} autoFocus />) : (<span className={`font-mono text-base cursor-pointer hover:opacity-80 transition-colors ${themeClasses.secondaryText}`} onClick={() => setIsEditingQuantity(true)}>{task.quantity ? `${task.quantity} órdenes` : '(sin cantidad)'}</span>)}
                     </div>
-                    {/* BLOQUE DE CONTROL: Tiempo, Iniciar/Detener, Eliminar */}
-                    <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0 mt-2 sm:mt-0"> 
-                        {/* Time display with edit functionality */}
-                        {editingTaskId === task.id ? (
-                            <input
-                                type="text"
-                                value={editingTime}
-                                onChange={(e) => setEditingTime(e.target.value)}
-                                onBlur={() => handleTimeEdit(task.id, editingTime)}
-                                onKeyPress={(e) => {
-                                    if (e.key === 'Enter') {
-                                        e.preventDefault();
-                                        handleTimeEdit(task.id, editingTime);
-                                    }
-                                }}
-                                placeholder="HH:MM:SS"
-                                className="font-mono text-xl text-gray-400 border-b-2 border-blue-500 bg-gray-700 focus:outline-none w-24 sm:w-28"
-                                autoFocus
-                            />
+
+                    {/* Actions Section: responsive layout for buttons and timer */}
+                    <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto flex-shrink-0 pt-4 sm:pt-0 mt-4 sm:mt-0 border-t border-gray-700/60 sm:border-none">
+                        {isEditingTime ? (
+                            <input type="text" value={editedTime} onChange={(e) => setEditedTime(e.target.value)} onBlur={handleTimeEdit} onKeyPress={(e) => e.key === 'Enter' && handleTimeEdit()} placeholder="HH:MM:SS" className={`font-mono text-xl border-b-2 bg-transparent focus:outline-none w-28 ${themeClasses.primaryText} border-blue-500`} autoFocus />
                         ) : (
-                            <span
-                                className="font-mono text-xl text-white cursor-pointer hover:text-blue-400 transition-colors"
-                                onClick={() => {
-                                    setEditingTaskId(task.id);
-                                    setEditingTime(formatTime(task.elapsedTime));
-                                    setEditingQuantityId(null); // Asegura que solo se edite una cosa a la vez
-                                    setEditingShopId(null);
-                                }}
-                            >
+                            <span className={`font-mono text-xl cursor-pointer hover:opacity-80 transition-colors ${themeClasses.primaryText}`} onClick={() => { setIsEditingTime(true); setEditedTime(formatTime(task.elapsedTime)); }}>
                                 {formatTime(currentElapsedTime)}
                             </span>
                         )}
-                        <button
-                            onClick={() => toggleTimer(task.id)}
-                            className={`px-4 py-2 sm:px-5 sm:py-2 rounded-full text-white font-semibold text-sm transition duration-300 shadow-md ${task.running ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'}`}
-                        >
-                            {task.running ? 'Detener' : 'Iniciar'}
-                        </button>
-                        <button
-                            onClick={() => deleteTask(task.id)}
-                            className="p-2 sm:p-3 text-gray-400 hover:text-red-500 transition duration-300"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 112 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-            )
-        }
 
-        // --- 3. COMPONENTE: TaskList (Contenedor de lista) ---
-        const TaskList = ({ tasks, toggleTimer, deleteTask, updateTaskDetails, formatTime, shopOptions, errorMessage, setErrorMessage, sortTasksByShop }) => {
-            // Estados para edición, movidos aquí para centralizar la gestión de la edición de ítems
-            const [editingTaskId, setEditingTaskId] = useState(null);
-            const [editingTime, setEditingTime] = useState('');
-            const [editingQuantityId, setEditingQuantityId] = useState(null);
-            const [editingQuantity, setEditingQuantity] = useState('');
-            const [editingShopId, setEditingShopId] = useState(null); 
-            const [editingShop, setEditingShop] = useState(''); 
-
-            return (
-                <div className="space-y-4">
-                    <hr className="border-t border-gray-600" />
-                    <div className="flex justify-end">
-                        <button
-                            onClick={sortTasksByShop}
-                            className="bg-gray-600 text-white px-4 py-2 text-sm rounded-full font-semibold hover:bg-gray-700 transition duration-300 shadow-lg"
-                        >
-                            Ordenar por Tienda
-                        </button>
-                    </div>
-                    {tasks.length > 0 ? (
-                        tasks.map((task) => (
-                           <TaskListItem
-                                key={task.id}
-                                task={task}
-                                toggleTimer={toggleTimer}
-                                deleteTask={deleteTask}
-                                updateTaskDetails={updateTaskDetails}
-                                formatTime={formatTime}
-                                shopOptions={shopOptions}
-                                errorMessage={errorMessage}
-                                setErrorMessage={setErrorMessage}
-                                
-                                editingTaskId={editingTaskId}
-                                setEditingTaskId={setEditingTaskId}
-                                editingTime={editingTime}
-                                setEditingTime={setEditingTime}
-
-                                editingQuantityId={editingQuantityId}
-                                setEditingQuantityId={setEditingQuantityId}
-                                editingQuantity={editingQuantity}
-                                setEditingQuantity={setEditingQuantity}
-
-                                editingShopId={editingShopId}
-                                setEditingShopId={setEditingShopId}
-                                editingShop={editingShop}
-                                setEditingShop={setEditingShop}
-                           />
-                        ))
-                    ) : (
-                        <p className="text-center text-gray-400 italic">Aún no hay tareas. Agrega una para empezar.</p>
-                    )}
-                </div>
-            )
-        }
-        
-        // --- 4. COMPONENTE: TaskInputForm (Formulario de adición) ---
-        const TaskInputForm = ({ tasks, setTasks, shopOptions, taskOptions, orderQuantity, setOrderQuantity, setReportOutput, setErrorMessage, errorMessage }) => {
-            const [taskInput, setTaskInput] = useState('');
-            const [shopInput, setShopInput] = useState(''); 
-            const [customTaskName, setCustomTaskName] = useState('');
-            const [isCustomTask, setIsCustomTask] = useState(false);
-            
-            // Determina si la tienda seleccionada es Clara Tienda
-            const isClaraTienda = shopInput === "Clara Tienda";
-
-            const handleTaskInputChange = (e) => {
-                setErrorMessage('');
-                const value = e.target.value;
-                setTaskInput(value);
-                if (value === "OTHER_CUSTOM_TASK") {
-                    setIsCustomTask(true);
-                } else {
-                    setIsCustomTask(false);
-                    setCustomTaskName('');
-                }
-            };
-            
-            const handleCustomTaskNameChange = (e) => {
-                setErrorMessage('');
-                setCustomTaskName(e.target.value);
-            }
-            
-            const handleShopInputChange = (e) => {
-                setErrorMessage('');
-                const newShop = e.target.value;
-                setShopInput(newShop);
-                
-                // Limpiar la selección de tarea si cambiamos a Clara Tienda
-                if (newShop === "Clara Tienda") {
-                    setTaskInput('');
-                    setCustomTaskName('');
-                    setIsCustomTask(false);
-                }
-            }
-
-            const addTask = (e) => {
-                e.preventDefault();
-                setErrorMessage('');
-
-                // 1. Determinar el nombre de la tarea
-                let taskName = '';
-                if (isClaraTienda) {
-                    // Si es Clara Tienda, el nombre de la tarea es fijo
-                    taskName = CLARA_TIENDA_TASK_NAME;
-                } else if (isCustomTask) {
-                    taskName = customTaskName.trim();
-                } else {
-                    taskName = taskInput.trim();
-                }
-
-                // 2. Validaciones
-                if (!shopInput) {
-                     setErrorMessage('Por favor, selecciona una tienda.');
-                     return;
-                }
-                
-                // Solo requerimos que taskName exista si NO es Clara Tienda
-                if (!isClaraTienda && !taskName) {
-                    setErrorMessage('Por favor, selecciona o ingresa un nombre para la tarea.');
-                    return;
-                }
-                
-                // Si es Clara Tienda, no puede tener órdenes duplicadas. 
-                // En otras tiendas, no puede haber Tarea+Tienda duplicada.
-                const fullTaskName = `${taskName} [${shopInput}]`;
-                
-                // LÓGICA DE VALIDACIÓN DE DUPLICADOS: Chequea nombre + tienda
-                const isDuplicate = tasks.some(task => 
-                    task.name.toLowerCase() === fullTaskName.toLowerCase()
-                );
-
-                if (isDuplicate) {
-                    setErrorMessage(`La tarea "${fullTaskName}" ya existe. No puedes duplicar Tarea+Tienda.`);
-                    return;
-                }
-                // --- FIN DE LÓGICA DE VALIDACIÓN ---
-
-                const newTask = {
-                    id: Date.now(),
-                    name: fullTaskName, // Guarda el nombre completo (Tarea + [Tienda])
-                    rawTaskName: taskName, // Guarda el nombre sin la tienda 
-                    shop: shopInput, // Guarda el nombre de la tienda
-                    quantity: orderQuantity ? parseInt(orderQuantity) : null,
-                    elapsedTime: 0,
-                    running: false,
-                    lastTime: null
-                };
-                
-                setTasks(prevTasks => [...prevTasks, newTask]);
-                
-                // Limpiar inputs, excepto la tienda que se puede reutilizar
-                // setShopInput(''); // Dejar la tienda seleccionada para conveniencia
-                setTaskInput('');
-                setOrderQuantity('');
-                setReportOutput('');
-                setCustomTaskName('');
-                setIsCustomTask(false);
-            };
-
-            return (
-                 <form onSubmit={addTask} className="flex flex-col gap-4">
-                    <div className="flex flex-col gap-2 w-full">
-
-                        {/* Campo de selección de Tienda */}
-                         <select
-                            value={shopInput}
-                            onChange={handleShopInputChange}
-                            className="flex-1 px-5 py-3 border-2 border-yellow-600 bg-gray-700 text-yellow-300 rounded-full focus:outline-none focus:ring-4 focus:ring-yellow-500 transition-all font-semibold"
-                            required
-                        >
-                            <option value="" disabled>--- Seleccionar Tienda ---</option>
-                            {shopOptions.map(option => (
-                                <option key={option} value={option}>{option}</option>
-                            ))}
-                        </select>
-                        
-                        {/* INPUTS CONDICIONALES */}
-
-                        {/* 1. Selección de Tarea (NO se muestra para Clara Tienda) */}
-                        {!isClaraTienda && !isCustomTask && (
-                            <select
-                                value={taskInput}
-                                onChange={handleTaskInputChange}
-                                className="flex-1 px-5 py-3 border-2 border-gray-600 bg-gray-700 text-white rounded-full focus:outline-none focus:ring-4 focus:ring-blue-500 transition-all"
-                                required={!isCustomTask}
-                            >
-                                <option value="" disabled>Seleccionar tarea</option>
-                                {taskOptions.map(option => (
-                                    <option key={option} value={option}>{option}</option>
-                                ))}
-                                <option value="OTHER_CUSTOM_TASK">Otra (Especificar)</option>
-                            </select>
-                        )}
-                        
-                        {/* Tarea fija mostrada para Clara Tienda */}
-                        {isClaraTienda && (
-                            <div className="flex-1 px-5 py-3 border-2 border-gray-600 bg-gray-700 text-gray-400 rounded-full italic">
-                                Tarea fija: {CLARA_TIENDA_TASK_NAME}
-                            </div>
-                        )}
-
-                        {/* 2. Tarea Personalizada (Solo si NO es Clara Tienda y se seleccionó la opción) */}
-                        {!isClaraTienda && isCustomTask && (
-                            <input
-                                type="text"
-                                value={customTaskName}
-                                onChange={handleCustomTaskNameChange}
-                                placeholder="Ingresa el nombre de la tarea"
-                                className="flex-1 px-5 py-3 border-2 border-gray-600 bg-gray-700 text-white rounded-full focus:outline-none focus:ring-4 focus:ring-blue-500 transition-all"
-                                required={isCustomTask}
-                            />
-                        )}
-
-                        {/* 3. Cantidad de Órdenes (Se muestra siempre) */}
-                        <input
-                            type="number"
-                            value={orderQuantity}
-                            onChange={(e) => setOrderQuantity(e.target.value)}
-                            placeholder="Cantidad de Órdenes (opcional)"
-                            className="flex-1 px-5 py-3 border-2 border-gray-600 bg-gray-700 text-white rounded-full focus:outline-none focus:ring-4 focus:ring-blue-500 transition-all"
-                        />
-                    </div>
-                    
-                    {/* Mensaje de error de duplicado/validación */}
-                    {errorMessage && (
-                        <p className="text-red-400 font-medium bg-red-900/50 p-3 rounded-xl text-center transition-all duration-300">
-                            {errorMessage}
-                        </p>
-                    )}
-                    
-                    <button
-                        type="submit"
-                        className="bg-blue-600 text-white px-6 py-3 rounded-full font-semibold hover:bg-blue-700 transition duration-300 shadow-lg w-full sm:w-auto"
-                    >
-                        Agregar Tarea
-                    </button>
-                    {isCustomTask && !isClaraTienda && (
-                        <button
-                            type="button"
-                            onClick={() => { setIsCustomTask(false); setTaskInput(''); setCustomTaskName(''); setErrorMessage(''); }}
-                            className="text-gray-400 hover:text-white mt-2 transition duration-300"
-                        >
-                            Cancelar Tarea Personalizada
-                        </button>
-                    )}
-                </form>
-            )
-        }
-
-
-        // --- 5. COMPONENTE PRINCIPAL: App (Maneja el estado y los efectos) ---
-        const App = () => {
-            const [tasks, setTasks] = useState([]);
-            const [orderQuantity, setOrderQuantity] = useState('');
-            const [reportOutput, setReportOutput] = useState('');
-            const [pastReports, setPastReports] = useState([]);
-            const [errorMessage, setErrorMessage] = useState('');
-
-            // Lógica de carga y guardado de datos (permanece en App)
-            useEffect(() => {
-                try {
-                    const savedTasks = JSON.parse(localStorage.getItem('tasks'));
-                    if (savedTasks) {
-                        // Al cargar, aseguramos que la propiedad shop exista para la ordenación
-                        const loadedTasks = savedTasks.map(task => ({
-                            ...task,
-                            shop: task.shop || (task.name.match(/\[([^\]]+)\]/)?.[1] || 'Sin Tienda') // Retrocompatibilidad si shop no existe
-                        }));
-                        setTasks(loadedTasks);
-                    }
-                    const savedReports = JSON.parse(localStorage.getItem('reports'));
-                    if (savedReports) {
-                        setPastReports(savedReports);
-                    }
-                } catch (e) {
-                    console.error("Error loading from localStorage", e);
-                }
-            }, []);
-
-            useEffect(() => {
-                try {
-                    localStorage.setItem('tasks', JSON.stringify(tasks));
-                } catch (e) {
-                    console.error("Error saving tasks to localStorage", e);
-                }
-            }, [tasks]);
-
-            useEffect(() => {
-                try {
-                    localStorage.setItem('reports', JSON.stringify(pastReports));
-                } catch (e) {
-                    console.error("Error saving reports to localStorage", e);
-                }
-            }, [pastReports]);
-
-            // Timer update loop (permanece en App)
-            useEffect(() => {
-                const timerInterval = setInterval(() => {
-                    setTasks(currentTasks =>
-                        currentTasks.map(task => {
-                            if (task.running) {
-                                const currentTime = Date.now();
-                                const currentElapsed = task.elapsedTime + (currentTime - task.lastTime);
-                                return { ...task, elapsedTime: currentElapsed, lastTime: currentTime };
-                            }
-                            return task;
-                        })
-                    );
-                }, 1000);
-
-                return () => clearInterval(timerInterval);
-            }, []);
-
-            // Handlers de Tareas (Permanecen en App para modificar el estado central)
-
-            const updateTaskDetails = (id, newDetails) => {
-                setTasks(prevTasks =>
-                    prevTasks.map(task => {
-                        if (task.id === id) {
-                            // Si es la tarea fija de Clara Tienda, no permitimos cambiar la tienda
-                            const isFixedTask = task.rawTaskName === CLARA_TIENDA_TASK_NAME;
-                            if (isFixedTask && newDetails.shop !== undefined && newDetails.shop !== task.shop) {
-                                setErrorMessage(`La tienda de la tarea fija "${CLARA_TIENDA_TASK_NAME}" no puede cambiarse.`);
-                                return task;
-                            }
-
-                            let newShop = newDetails.shop !== undefined ? newDetails.shop : task.shop;
-                            let newRawTaskName = task.rawTaskName;
-                            
-                            // Reconstruir el nombre completo de la tarea si la tienda cambia
-                            let newFullName = newShop ? `${newRawTaskName} [${newShop}]` : task.name;
-                            
-                            // LÓGICA DE VALIDACIÓN DE DUPLICADOS antes de actualizar
-                            const newFullTaskNameForValidation = newShop ? `${task.rawTaskName} [${newShop}]` : task.name;
-
-                            const isDuplicate = prevTasks.some(existingTask => 
-                                existingTask.id !== id && 
-                                existingTask.name.toLowerCase() === newFullTaskNameForValidation.toLowerCase()
-                            );
-                            
-                            if (isDuplicate) {
-                                setErrorMessage(`La combinación Tarea + Tienda ya existe: "${newFullTaskNameForValidation}".`);
-                                return task; // Retorna la tarea original sin cambios
-                            }
-                            setErrorMessage(''); // Limpiar error si la actualización es exitosa
-
-                            return { 
-                                ...task, 
-                                ...newDetails,
-                                shop: newShop,
-                                name: newFullName // Actualiza el nombre con la nueva tienda
-                            };
-                        }
-                        return task;
-                    })
-                );
-            };
-
-            const toggleTimer = (id) => {
-                setTasks(prevTasks =>
-                    prevTasks.map(task => {
-                        // Stop any other running timers
-                        if (task.running && task.id !== id) {
-                            return { 
-                                ...task, 
-                                running: false, 
-                                elapsedTime: task.elapsedTime + (Date.now() - (task.lastTime || Date.now())), 
-                                lastTime: null 
-                            };
-                        }
-                        // Toggle the selected task's timer
-                        if (task.id === id) {
-                            const newRunningState = !task.running;
-                            const newElapsedTime = newRunningState ? task.elapsedTime : task.elapsedTime + (Date.now() - (task.lastTime || Date.now()));
-                            return {
-                                ...task,
-                                running: newRunningState,
-                                elapsedTime: newElapsedTime,
-                                lastTime: newRunningState ? Date.now() : null,
-                            };
-                        }
-                        return task;
-                    })
-                );
-            };
-
-            const deleteTask = (id) => {
-                setTasks(prevTasks => prevTasks.filter(task => task.id !== id));
-                setReportOutput('');
-            };
-            
-            // NUEVA FUNCIÓN: Ordenar tareas por tienda
-            const sortTasksByShop = () => {
-                setTasks(prevTasks => {
-                    // Crea una copia de la lista para no mutar el estado directamente
-                    const sortedTasks = [...prevTasks];
-                    
-                    // Compara por nombre de tienda (shop) en orden alfabético
-                    sortedTasks.sort((a, b) => {
-                        const shopA = a.shop.toUpperCase();
-                        const shopB = b.shop.toUpperCase();
-                        if (shopA < shopB) {
-                            return -1;
-                        }
-                        if (shopA > shopB) {
-                            return 1;
-                        }
-                        return 0; // Mantener el orden relativo si las tiendas son iguales
-                    });
-
-                    return sortedTasks;
-                });
-            };
-
-            const generateReport = () => {
-                // LLAMA A LA FUNCIÓN EXTERNA y solo maneja el estado
-                const reportContent = generateEODRContent(tasks);
-
-                setReportOutput(reportContent);
-
-                // Save report to history
-                const reportDocId = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-                const newReport = {
-                    id: reportDocId,
-                    date: new Date().toISOString(),
-                    content: reportContent
-                };
-
-                setPastReports(prevReports => {
-                    // Find and replace if a report for today already exists
-                    const existingReportIndex = prevReports.findIndex(report => report.id === reportDocId);
-                    if (existingReportIndex > -1) {
-                        const updatedReports = [...prevReports];
-                        updatedReports[existingReportIndex] = newReport;
-                        return updatedReports;
-                    }
-                    return [...prevReports, newReport].sort((a, b) => b.id.localeCompare(a.id));
-                });
-            };
-            
-            
-
-
-            return (
-                <div className="max-w-md w-full bg-gray-800 rounded-2xl shadow-xl p-4 sm:p-6 space-y-4 sm:space-y-6">
-                    <h1 className="text-3xl sm:text-4xl font-extrabold text-white text-center">
-                        Task Manager TL
-                    </h1>
-                    
-                    {/* Task input section - Usando el nuevo componente */}
-                    <TaskInputForm
-                        tasks={tasks}
-                        setTasks={setTasks}
-                        shopOptions={shopOptions}
-                        taskOptions={taskOptions}
-                        orderQuantity={orderQuantity}
-                        setOrderQuantity={setOrderQuantity}
-                        setReportOutput={setReportOutput}
-                        errorMessage={errorMessage}
-                        setErrorMessage={setErrorMessage}
-                    />
-
-                    {/* Task list section - Usando el nuevo componente */}
-                    <TaskList
-                        tasks={tasks}
-                        toggleTimer={toggleTimer}
-                        deleteTask={deleteTask}
-                        updateTaskDetails={updateTaskDetails}
-                        formatTime={formatTime}
-                        shopOptions={shopOptions}
-                        errorMessage={errorMessage}
-                        setErrorMessage={setErrorMessage}
-                        sortTasksByShop={sortTasksByShop} // Pasar la nueva función
-                    />
-
-                    <hr className="border-t border-gray-600" />
-
-                    {/* Report section */}
-                    <div className="flex flex-col items-center">
-                        <button
-                            onClick={generateReport}
-                            className="bg-purple-600 text-white px-6 py-3 rounded-full font-semibold hover:bg-purple-700 transition duration-300 shadow-lg mb-4 w-full sm:w-auto"
-                        >
-                            Generar E.O.D.R.
-                        </button>
-                        
-    
-
-                        <div className="w-full bg-gray-700 text-gray-200 rounded-xl p-5 font-mono text-sm whitespace-pre-wrap">
-                            {reportOutput || 'El reporte de fin de día aparecerá aquí...'}
+                        <div className="flex items-center gap-2">
+                           <button onClick={() => toggleTimer(task.id)} className={`px-4 py-2 rounded-full text-white font-semibold transition duration-300 shadow-md ${task.running ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'}`}>{task.running ? 'Detener' : 'Iniciar'}</button>
+                           <button onClick={() => deleteTask(task.id)} className="p-2 text-gray-400 hover:text-red-500 transition duration-300"><svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 112 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" /></svg></button>
                         </div>
-                    </div>
-
-                    {/* Past reports section */}
-                    <hr className="border-t border-gray-600" />
-                    <div className="space-y-4">
-                        <h2 className="text-2xl font-bold text-center text-white">Historial de Reportes</h2>
-                        {pastReports.length > 0 ? (
-                            pastReports.map((report) => (
-                                <div key={report.id} className="bg-gray-700 rounded-xl p-5 shadow-md">
-                                    <pre className="font-mono text-sm text-gray-200 whitespace-pre-wrap">
-                                        {report.content}
-                                    </pre>
-                                </div>
-                            ))
-                        ) : (
-                            <p className="text-center text-gray-400 italic">No hay reportes anteriores.</p>
-                        )}
                     </div>
                 </div>
             );
         };
+        
+        const TaskInputForm = ({ addTask, errorMessage, setErrorMessage, themeClasses }) => {
+            const [shopInput, setShopInput] = useState(''); const [taskInput, setTaskInput] = useState(''); const [customTaskName, setCustomTaskName] = useState(''); const [orderQuantity, setOrderQuantity] = useState(''); const [isCustomTask, setIsCustomTask] = useState(false); const isClaraTienda = shopInput === "Clara Tienda";
+            const handleShopChange = (e) => { const newShop = e.target.value; setShopInput(newShop); if (newShop === "Clara Tienda") { setTaskInput(''); setCustomTaskName(''); setIsCustomTask(false); } };
+            const handleTaskChange = (e) => { const value = e.target.value; setTaskInput(value); setIsCustomTask(value === "OTHER_CUSTOM_TASK"); if (value !== "OTHER_CUSTOM_TASK") setCustomTaskName(''); };
+            const handleSubmit = (e) => { e.preventDefault(); const taskName = isClaraTienda ? CLARA_TIENDA_TASK_NAME : (isCustomTask ? customTaskName.trim() : taskInput.trim()); const success = addTask({ shopInput, taskName, orderQuantity }); if (success) { setShopInput(shopInput); setTaskInput(''); setCustomTaskName(''); setOrderQuantity(''); setIsCustomTask(false); setErrorMessage(''); } };
+            const optionClasses = `${themeClasses.cardBg} ${themeClasses.primaryText}`;
+            return (
+                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-2 w-full">
+                        <select value={shopInput} onChange={handleShopChange} className={`flex-1 px-5 py-3 border-2 ${themeClasses.cardBg} ${themeClasses.accentText} ${themeClasses.shopSelectBorder} rounded-full focus:outline-none transition-all font-semibold`} required><option value="" disabled className={optionClasses}>--- Seleccionar Tienda ---</option>{shopOptions.map(o => <option key={o} value={o} className={optionClasses}>{o}</option>)}</select>
+                        {!isClaraTienda && !isCustomTask && <select value={taskInput} onChange={handleTaskChange} className={`flex-1 px-5 py-3 border-2 ${themeClasses.cardBg} ${themeClasses.secondaryText} ${themeClasses.inputBorder} rounded-full focus:outline-none transition-all`} required={!isCustomTask}><option value="" disabled className={optionClasses}>Seleccionar tarea</option>{taskOptions.map(o => <option key={o} value={o} className={optionClasses}>{o}</option>)}<option value="OTHER_CUSTOM_TASK" className={optionClasses}>Otra</option></select>}
+                        {isClaraTienda && <div className={`flex-1 px-5 py-3 border-2 ${themeClasses.cardBg} ${themeClasses.secondaryText} ${themeClasses.inputBorder} rounded-full italic`}>Tarea fija: {CLARA_TIENDA_TASK_NAME}</div>}
+                        {!isClaraTienda && isCustomTask && <input type="text" value={customTaskName} onChange={e => setCustomTaskName(e.target.value)} placeholder="Nombre de la tarea" className={`flex-1 px-5 py-3 border-2 ${themeClasses.cardBg} ${themeClasses.secondaryText} ${themeClasses.inputBorder} rounded-full focus:outline-none transition-all`} required={isCustomTask} />}
+                        <input type="number" value={orderQuantity} onChange={(e) => setOrderQuantity(e.target.value)} placeholder="Cantidad (opcional)" className={`flex-1 px-5 py-3 border-2 ${themeClasses.cardBg} ${themeClasses.secondaryText} ${themeClasses.inputBorder} rounded-full focus:outline-none transition-all`} />
+                    </div>
+                    {errorMessage && <p className="text-red-400 font-medium bg-red-900/50 p-3 rounded-xl text-center">{errorMessage}</p>}
+                    <button type="submit" className={`px-6 py-3 rounded-full font-semibold transition duration-300 shadow-lg w-full sm:w-auto ${themeClasses.buttonAdd}`}>Agregar Tarea</button>
+                    {isCustomTask && !isClaraTienda && <button type="button" onClick={() => { setIsCustomTask(false); setTaskInput(''); }} className="text-gray-400 hover:text-white mt-2">Cancelar Tarea Personalizada</button>}
+                </form>
+            );
+        };
 
-        ReactDOM.render(<App />, document.getElementById('root'));
+        // --- SECTION: MAIN APP COMPONENT ---
+
+        const App = () => {
+            const { celebration, themeClasses } = useCelebration(birthdaysList);
+            const { tasks, errorMessage, setErrorMessage, addTask, deleteTask, toggleTimer, updateTaskDetails, sortTasksByShop } = useTasks();
+            const [pastReports, setPastReports] = usePersistentState('reports', []);
+            const [reportOutput, setReportOutput] = useState('');
+            useEffect(() => { document.getElementById('root').style.zIndex = '10'; document.body.className = `${themeClasses.bodyBg} transition-colors duration-500`; }, [themeClasses]);
+            const generateReport = () => {
+                const reportContent = generateEODRContent(tasks);
+                setReportOutput(reportContent);
+                const reportDocId = new Date().toISOString().slice(0, 10);
+                const newReport = { id: reportDocId, content: reportContent };
+                setPastReports(prev => {
+                    const existingIdx = prev.findIndex(r => r.id === reportDocId);
+                    if (existingIdx > -1) { const updated = [...prev]; updated[existingIdx] = newReport; return updated; }
+                    return [...prev, newReport].sort((a, b) => b.id.localeCompare(a.id));
+                });
+            };
+            const cardGlowClass = celebration.theme === 'halloween' ? 'glow-card' : celebration.theme === 'party' ? 'party-glow-card' : '';
+            return (
+                <div className={`max-w-xl w-11/12 mx-auto rounded-2xl shadow-xl p-8 pt-12 space-y-6 transition-colors duration-500 ${themeClasses.cardBg} max-h-[95vh] overflow-y-auto hide-scrollbar relative ${cardGlowClass}`}>
+                    <SpiderWeb isHalloween={celebration.theme === 'halloween'} />
+                    <Title themeClasses={themeClasses} celebration={celebration} />
+                    <TaskInputForm {...{ addTask, errorMessage, setErrorMessage, themeClasses }} />
+                    <div className="space-y-4">
+                        <hr className="border-t border-gray-600" />
+                        <div className="flex justify-end"><button onClick={sortTasksByShop} className="bg-gray-600 text-white px-4 py-2 text-sm rounded-full font-semibold hover:bg-gray-700 transition duration-300 shadow-lg">Ordenar por Tienda</button></div>
+                        {tasks.length > 0 ? tasks.map((task) => (<TaskListItem key={task.id} {...{ task, toggleTimer, deleteTask, updateTaskDetails, themeClasses }}/>)) : (<p className="text-center text-gray-400 italic">No hay tareas.</p>)}
+                    </div>
+                    <div className="flex flex-col items-center">
+                        <button onClick={generateReport} className={`px-6 py-3 rounded-full font-semibold transition duration-300 shadow-lg mb-4 ${themeClasses.buttonAction}`}>Generar E.O.D.R.</button>
+                        <div className={`w-full p-5 rounded-xl font-mono text-sm whitespace-pre-wrap transition-colors duration-500 ${themeClasses.itemBg} ${themeClasses.secondaryText}`}>{reportOutput || 'El reporte aparecerá aquí...'}</div>
+                    </div>
+                    <hr className="border-t border-gray-600" />
+                    <div className="space-y-4">
+                        <h2 className={`text-2xl font-bold text-center ${themeClasses.primaryText}`}>Historial de Reportes</h2>
+                        {pastReports.length > 0 ? (pastReports.map((report) => (<div key={report.id} className={`rounded-xl p-5 shadow-md transition-colors duration-500 ${themeClasses.itemBg}`}><pre className={`font-mono text-sm whitespace-pre-wrap ${themeClasses.secondaryText}`}>{report.content}</pre></div>))) : (<p className="text-center text-gray-400 italic">No hay reportes anteriores.</p>)}
+                    </div>
+                </div>
+            );
+        };
+        
+        const ThemeWrapper = () => {
+            const { celebration } = useCelebration(birthdaysList);
+            return (
+                <>
+                    <BackgroundParticles isHalloween={celebration.theme === 'halloween'} /> 
+                    <BackgroundGhost isHalloween={celebration.theme === 'halloween'} />
+                    <BackgroundConfetti isParty={celebration.theme === 'party'} />
+                    <BackgroundSnow isChristmas={celebration.theme === 'christmas'} />
+                    <BackgroundChristmasLights isChristmas={celebration.theme === 'christmas'} />
+                    <App />
+                </>
+            );
+        }
+
+        ReactDOM.render(<ThemeWrapper />, document.getElementById('root'));
     </script>
+</body>
+</html>
 </body>
 </html>
