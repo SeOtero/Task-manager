@@ -295,7 +295,6 @@
                 });
             }, [setTasks]);
             
-            // --- NUEVA FUNCIÓN ---
             const resetTaskTimer = useCallback((id) => {
                 setTasks(prev => prev.map(t => 
                     t.id === id 
@@ -318,7 +317,6 @@
             }, [setTasks]);
             const sortTasksByShop = useCallback(() => setTasks(prev => [...prev].sort((a, b) => a.shop.localeCompare(b.shop))), [setTasks]);
             
-            // --- ACTUALIZAR RETORNO ---
             return { tasks, errorMessage, setErrorMessage, addTask, deleteTask, toggleTimer, updateTaskDetails, sortTasksByShop, resetTaskTimer };
         };
 
@@ -394,7 +392,6 @@
             );
         };
         
-        // --- UPDATED COMPONENT ---
         const TaskListItem = ({ task, toggleTimer, deleteTask, updateTaskDetails, themeClasses, resetTaskTimer }) => {
             const [isEditingTime, setIsEditingTime] = useState(false); 
             const [editedTime, setEditedTime] = useState(formatTime(task.elapsedTime)); 
@@ -402,7 +399,6 @@
             const [editedQuantity, setEditedQuantity] = useState(task.quantity || ''); 
             const [isEditingShop, setIsEditingShop] = useState(false); 
             const [editedShop, setEditedShop] = useState(task.shop); 
-            // --- NUEVO ESTADO ---
             const [isConfirmingReset, setIsConfirmingReset] = useState(false);
             
             const currentElapsedTime = task.running ? task.elapsedTime + (Date.now() - (task.lastTime || Date.now())) : task.elapsedTime; 
@@ -412,14 +408,12 @@
             const handleQuantityEdit = () => { updateTaskDetails(task.id, { quantity: parseInt(editedQuantity) || null }); setIsEditingQuantity(false); };
             const handleShopEdit = () => { if (!isClaraTiendaFixedTask && editedShop) updateTaskDetails(task.id, { shop: editedShop }); setIsEditingShop(false); };
             
-            // --- NUEVO MANEJADOR ---
             const handleResetClick = () => {
                 resetTaskTimer(task.id);
                 setIsConfirmingReset(false);
             };
 
             return (
-                // Main container: responsive flex for mobile vs desktop
                 <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 rounded-xl shadow-md ${themeClasses.itemBg} ${task.running ? 'border-l-4 border-green-500' : 'border-l-4 border-gray-600'}`}>
                     
                     {/* Details Section */}
@@ -429,7 +423,6 @@
                         {isEditingQuantity ? (<input type="number" value={editedQuantity} onChange={(e) => setEditedQuantity(e.target.value)} onBlur={handleQuantityEdit} onKeyPress={(e) => e.key === 'Enter' && handleQuantityEdit()} className={`font-mono text-lg border-b-2 bg-transparent focus:outline-none w-full sm:w-24 ${themeClasses.secondaryText} border-blue-500`} autoFocus />) : (<span className={`font-mono text-base cursor-pointer hover:opacity-80 transition-colors ${themeClasses.secondaryText}`} onClick={() => setIsEditingQuantity(true)}>{task.quantity ? `${task.quantity} órdenes` : '(sin cantidad)'}</span>)}
                     </div>
 
-                    {/* Actions Section: responsive layout for buttons and timer */}
                     <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto flex-shrink-0 pt-4 sm:pt-0 mt-4 sm:mt-0 border-t border-gray-700/60 sm:border-none">
                         {isEditingTime ? (
                             <input type="text" value={editedTime} onChange={(e) => setEditedTime(e.target.value)} onBlur={handleTimeEdit} onKeyPress={(e) => e.key === 'Enter' && handleTimeEdit()} placeholder="HH:MM:SS" className={`font-mono text-xl border-b-2 bg-transparent focus:outline-none w-28 ${themeClasses.primaryText} border-blue-500`} autoFocus />
@@ -439,14 +432,11 @@
                             </span>
                         )}
 
-                        {/* --- BOTONES DE ACCIÓN ACTUALIZADOS --- */}
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center flex-wrap justify-end gap-x-2 gap-y-1">
                            <button onClick={() => toggleTimer(task.id)} className={`px-4 py-2 rounded-full text-white font-semibold transition duration-300 shadow-md ${task.running ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'}`}>{task.running ? 'Detener' : 'Iniciar'}</button>
                            
-                           {/* Lógica de confirmación de reinicio */}
                            {isConfirmingReset ? (
                                 <>
-                                    {/* Botón Confirmar */}
                                     <button 
                                         onClick={handleResetClick}
                                         className="p-2 text-white bg-red-600 rounded-full hover:bg-red-700 transition duration-300"
@@ -456,7 +446,6 @@
                                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                         </svg>
                                     </button>
-                                    {/* Botón Cancelar */}
                                     <button 
                                         onClick={() => setIsConfirmingReset(false)}
                                         className="p-2 text-gray-400 hover:text-white transition duration-300"
@@ -469,7 +458,6 @@
                                 </>
                             ) : (
                                 <>
-                                    {/* Botón Reiniciar (Icono de recarga) */}
                                     <button 
                                         onClick={() => setIsConfirmingReset(true)} 
                                         className="p-2 text-gray-400 hover:text-yellow-500 transition duration-300"
@@ -482,7 +470,6 @@
                                 </>
                             )}
                            
-                           {/* Botón Eliminar (siempre visible) */}
                            <button onClick={() => deleteTask(task.id)} className="p-2 text-gray-400 hover:text-red-500 transition duration-300"><svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 112 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" /></svg></button>
                         </div>
                     </div>
@@ -506,6 +493,7 @@
                         <input type="number" value={orderQuantity} onChange={(e) => setOrderQuantity(e.target.value)} placeholder="Cantidad (opcional)" className={`flex-1 px-5 py-3 border-2 ${themeClasses.cardBg} ${themeClasses.secondaryText} ${themeClasses.inputBorder} rounded-full focus:outline-none transition-all`} />
                     </div>
                     {errorMessage && <p className="text-red-400 font-medium bg-red-900/50 p-3 rounded-xl text-center">{errorMessage}</p>}
+                    {/* --- CORRECCIÓN AQUÍ --- */}
                     <button type="submit" className={`px-6 py-3 rounded-full font-semibold transition duration-300 shadow-lg w-full sm:w-auto ${themeClasses.buttonAdd}`}>Agregar Tarea</button>
                     {isCustomTask && !isClaraTienda && <button type="button" onClick={() => { setIsCustomTask(false); setTaskInput(''); }} className="text-gray-400 hover:text-white mt-2">Cancelar Tarea Personalizada</button>}
                 </form>
@@ -516,7 +504,6 @@
 
         const App = () => {
             const { celebration, themeClasses } = useCelebration(birthdaysList);
-            // --- OBTENER LA NUEVA FUNCIÓN ---
             const { tasks, errorMessage, setErrorMessage, addTask, deleteTask, toggleTimer, updateTaskDetails, sortTasksByShop, resetTaskTimer } = useTasks();
             const [pastReports, setPastReports] = usePersistentState('reports', []);
             const [reportOutput, setReportOutput] = useState('');
@@ -541,7 +528,6 @@
                     <div className="space-y-4">
                         <hr className="border-t border-gray-600" />
                         <div className="flex justify-end"><button onClick={sortTasksByShop} className="bg-gray-600 text-white px-4 py-2 text-sm rounded-full font-semibold hover:bg-gray-700 transition duration-300 shadow-lg">Ordenar por Tienda</button></div>
-                        {/* --- PASAR LA NUEVA FUNCIÓN AL ITEM --- */}
                         {tasks.length > 0 ? tasks.map((task) => (<TaskListItem key={task.id} {...{ task, toggleTimer, deleteTask, updateTaskDetails, themeClasses, resetTaskTimer }}/>)) : (<p className="text-center text-gray-400 italic">No hay tareas.</p>)}
                     </div>
                     <div className="flex flex-col items-center">
@@ -577,5 +563,4 @@
 </html>
 </body>
 </html>
-</body>
 </html>
