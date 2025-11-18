@@ -532,6 +532,7 @@
             const [isConfirmingReset, setIsConfirmingReset] = useState(false);
             
             const currentElapsedTime = task.running ? task.elapsedTime + (Date.now() - (task.lastTime || Date.now())) : task.elapsedTime; 
+            const isClaraTiendaFixedTask = task.rawTaskName === CLARA_TIENDA_TASK_NAME;
             const isCustomTask = task.isCustom; // Usar la nueva propiedad para determinar si es editable
             
             const handleTimeEdit = () => { 
@@ -593,7 +594,10 @@
                         ) : (
                             <span 
                                 className={`font-bold text-sm transition-colors ${themeClasses.accentText} cursor-pointer hover:opacity-80`} 
-                                onClick={() => setIsEditingShop(true)}
+                                onClick={() => {
+                                    setEditedShop(task.shop); // Sincronizar estado antes de editar
+                                    setIsEditingShop(true);
+                                }}
                             >
                                 {task.shop || 'Sin Tienda'}
                             </span>
@@ -612,7 +616,12 @@
                         ) : (
                             <span 
                                 className={`font-medium text-lg break-words ${taskNameClass} ${themeClasses.secondaryText}`}
-                                onClick={() => isCustomTask && setIsEditingName(true)} // Solo editable si es personalizada
+                                onClick={() => {
+                                    if (isCustomTask) {
+                                        setEditedName(task.rawTaskName); // Sincronizar estado antes de editar
+                                        setIsEditingName(true);
+                                    }
+                                }} 
                             >
                                 {task.rawTaskName || task.name}
                             </span>
@@ -633,7 +642,10 @@
                             <div className="flex items-center gap-2">
                                 <span 
                                     className={`font-mono text-base cursor-pointer hover:opacity-80 transition-colors ${themeClasses.secondaryText}`} 
-                                    onClick={() => setIsEditingQuantity(true)}
+                                    onClick={() => {
+                                        setEditedQuantity(task.quantity || ''); // Sincronizar estado antes de editar
+                                        setIsEditingQuantity(true);
+                                    }}
                                 >
                                     {task.quantity ? `${task.quantity} órdenes` : '(sin cantidad)'}
                                 </span>
@@ -653,7 +665,13 @@
                         {isEditingTime ? (
                             <input type="text" value={editedTime} onChange={(e) => setEditedTime(e.target.value)} onBlur={handleTimeEdit} onKeyPress={(e) => e.key === 'Enter' && handleTimeEdit()} placeholder="HH:MM:SS" className={`font-mono text-xl border-b-2 bg-transparent focus:outline-none w-28 ${themeClasses.primaryText} border-blue-500`} autoFocus />
                         ) : (
-                            <span className={`font-mono text-xl cursor-pointer hover:opacity-80 transition-colors ${themeClasses.primaryText}`} onClick={() => { setIsEditingTime(true); setEditedTime(formatTime(task.elapsedTime)); }}>
+                            <span 
+                                className={`font-mono text-xl cursor-pointer hover:opacity-80 transition-colors ${themeClasses.primaryText}`} 
+                                onClick={() => { 
+                                    setEditedTime(formatTime(currentElapsedTime)); // Sincronizar tiempo antes de editar
+                                    setIsEditingTime(true); 
+                                }}
+                            >
                                 {formatTime(currentElapsedTime)}
                             </span>
                         )}
