@@ -113,7 +113,7 @@
         .spider-web .line1 { width: 120px; height: 2px; top: 0; left: 0; transform-origin: top left; transform: rotate(25deg); }
         .spider-web .line2 { width: 120px; height: 2px; top: 0; left: 0; transform-origin: top left; transform: rotate(-25deg); }
 
-        /* --- NUEVO: Estilos de Nieve (Navidad) --- */
+        /* --- Estilos de Nieve (Navidad) --- */
         @keyframes snowfall {
             0% { transform: translateY(-10vh) translateX(0); }
             100% { transform: translateY(110vh) translateX(calc(var(--drift) * 15vw)); }
@@ -126,7 +126,7 @@
             animation-delay: var(--delay);
         }
 
-        /* --- NUEVO: Estilos de Luces (Navidad) --- */
+        /* --- Estilos de Luces (Navidad) --- */
         @keyframes twinkle {
             0%, 100% { opacity: 0.6; transform: scale(0.9); }
             50% { opacity: 1; transform: scale(1.1); }
@@ -137,7 +137,7 @@
             z-index: 1; pointer-events: none;
         }
 
-        /* --- NUEVO: Estilos de Fantasma (Halloween) --- */
+        /* --- Estilos de Fantasma (Halloween) --- */
         @keyframes float-ghost {
             0% { transform: translate(var(--start-x), 100vh) scale(1); opacity: 0; }
             20% { opacity: 0.6; }
@@ -152,7 +152,21 @@
             fill: rgba(255, 255, 255, 0.1);
             filter: drop-shadow(0 0 15px rgba(200, 220, 255, 0.6));
         }
-
+        
+        /* --- Estilos de Magia (Bianca Bday) --- */
+        @keyframes magic-float {
+            0% { transform: translateY(110vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+        }
+        .magic-particle {
+            position: fixed;
+            top: 0;
+            pointer-events: none;
+            z-index: 1;
+            animation: magic-float var(--duration) linear infinite;
+            animation-delay: var(--delay);
+        }
+        
     </style>
 </head>
 <body class="bg-gray-900 transition-colors duration-500">
@@ -173,14 +187,14 @@
             { name: "Dana", date: "08-28" },
             { name: "Iliana", date: "12-27" },
             { name: "Valentina", date: "09-03" },
-
         ];
         
         const themes = {
             default: { bodyBg: 'bg-gray-900', cardBg: 'bg-gray-800', itemBg: 'bg-gray-700', primaryText: 'text-white', secondaryText: 'text-gray-300', accentText: 'text-yellow-300', buttonAdd: 'bg-blue-600 hover:bg-blue-700', buttonAction: 'bg-purple-600 hover:bg-purple-700', inputBorder: 'border-gray-600 focus:ring-blue-500', shopSelectBorder: 'border-yellow-600 focus:ring-yellow-500', titleFont: '' },
             halloween: { bodyBg: 'bg-gray-950', cardBg: 'bg-[#0a0a0a] shadow-2xl', itemBg: 'bg-gray-800/40 border border-gray-700/60', primaryText: 'text-orange-500', secondaryText: 'text-gray-300', accentText: 'text-yellow-400', buttonAdd: 'bg-orange-600 hover:bg-orange-700 text-white', buttonAction: 'bg-purple-700 hover:bg-purple-800 text-white', inputBorder: 'border-gray-700 focus:ring-orange-500', shopSelectBorder: 'border-orange-500 focus:ring-orange-400', titleFont: 'font-creepster tracking-widest' },
             christmas: { bodyBg: 'bg-red-900', cardBg: 'bg-green-900/90 backdrop-blur-sm', itemBg: 'bg-green-800/50 border border-yellow-300/30', primaryText: 'text-white', secondaryText: 'text-gray-200', accentText: 'text-yellow-300', buttonAdd: 'bg-red-600 hover:bg-red-700 text-white', buttonAction: 'bg-yellow-500 hover:bg-yellow-600 text-green-900', inputBorder: 'border-red-400 focus:ring-red-300', shopSelectBorder: 'border-yellow-400 focus:ring-yellow-300', titleFont: 'font-christmas' },
-            party: { bodyBg: 'bg-black', cardBg: 'bg-gray-900/80 backdrop-blur-sm', itemBg: 'bg-gray-800/50 border border-purple-500/30', primaryText: 'text-fuchsia-400', secondaryText: 'text-gray-200', accentText: 'text-cyan-400', buttonAdd: 'bg-fuchsia-600 hover:bg-fuchsia-700 text-white', buttonAction: 'bg-cyan-500 hover:bg-cyan-600 text-white', inputBorder: 'border-gray-600 focus:ring-fuchsia-500', shopSelectBorder: 'border-cyan-500 focus:ring-cyan-400', titleFont: 'font-bold' }
+            party: { bodyBg: 'bg-black', cardBg: 'bg-gray-900/80 backdrop-blur-sm', itemBg: 'bg-gray-800/50 border border-purple-500/30', primaryText: 'text-fuchsia-400', secondaryText: 'text-gray-200', accentText: 'text-cyan-400', buttonAdd: 'bg-fuchsia-600 hover:bg-fuchsia-700 text-white', buttonAction: 'bg-cyan-500 hover:bg-cyan-600 text-white', inputBorder: 'border-gray-600 focus:ring-fuchsia-500', shopSelectBorder: 'border-cyan-500 focus:ring-cyan-400', titleFont: 'font-bold' },
+            biancaBday: { bodyBg: 'bg-black', cardBg: 'bg-gray-950/90 backdrop-blur-sm shadow-2xl shadow-purple-500/30', itemBg: 'bg-gray-800/60 border border-purple-700/50', primaryText: 'text-purple-400', secondaryText: 'text-red-400', accentText: 'text-pink-400', buttonAdd: 'bg-red-600 hover:bg-red-700 text-white', buttonAction: 'bg-purple-600 hover:bg-purple-700 text-white', inputBorder: 'border-gray-700 focus:ring-purple-500', shopSelectBorder: 'border-pink-400 focus:ring-pink-400', titleFont: 'font-christmas' }
         };
 
         const shopOptions = ["Tienda Lujosa", "Clara Tienda", "Clara Tierra"];
@@ -247,19 +261,38 @@
         const useCelebration = (birthdays) => {
             const checkBirthday = useCallback((birthdays) => {
                 const today = new Date();
+                
+                // --- FECHA REAL (ACTIVADA) ---
                 const todayFormatted = `${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
+                
+                // --- DEBUG / TEST MODE (Descomentar para probar) ---
+                // const todayFormatted = "12-18"; 
+                
                 const found = birthdays.find(b => b.date === todayFormatted);
                 return found ? found.name : null;
             }, []);
+
             const celebration = useMemo(() => {
                 const today = new Date();
                 const month = today.getMonth() + 1;
-                const birthdayName = checkBirthday(birthdays);
-                if (birthdayName) return { theme: 'party', message: `¡Feliz Cumpleaños ${birthdayName}! 🎉`, icon: 'party' };
+                
+                const birthdayPerson = checkBirthday(birthdays);
+
+                // --- Lógica de Cumpleaños (Prioridad 1) ---
+                if (birthdayPerson) {
+                    if (birthdayPerson === "Bianca") {
+                        return { theme: 'biancaBday', message: `¡Feliz Cumpleaños Bianca! 🦄🐱`, icon: 'bianca' };
+                    }
+                    return { theme: 'party', message: `¡Feliz Cumpleaños ${birthdayPerson}! 🎉`, icon: 'party' };
+                }
+
+                // --- Lógica Estacional (Si no hay cumpleaños) ---
                 if (month === 10) return { theme: 'halloween', message: '¡Feliz Halloween!', icon: 'halloween' };
                 if (month === 12) return { theme: 'christmas', message: '¡Feliz Navidad!', icon: 'christmas' };
+                
                 return { theme: 'default', message: '', icon: 'default' };
             }, [birthdays, checkBirthday]);
+            
             const themeClasses = useMemo(() => themes[celebration.theme] || themes.default, [celebration.theme]);
             return { celebration, themeClasses };
         };
@@ -298,10 +331,11 @@
                 });
             }, [setTasks]);
             
+            // MODIFICACIÓN 2: Resetear la cantidad a null al resetear el timer.
             const resetTaskTimer = useCallback((id) => {
                 setTasks(prev => prev.map(t => 
                     t.id === id 
-                    ? { ...t, elapsedTime: 0, running: false, lastTime: null } 
+                    ? { ...t, elapsedTime: 0, running: false, lastTime: null, quantity: null } 
                     : t
                 ));
             }, [setTasks]);
@@ -309,7 +343,7 @@
             const updateTaskDetails = useCallback((id, newDetails) => {
                 setTasks(prev => prev.map(t => {
                     if (t.id === id) {
-                        if (t.rawTaskName === CLARA_TIENDA_TASK_NAME && newDetails.shop && newDetails.shop !== t.shop) { setErrorMessage('No se puede cambiar la tienda de la Tarea Única.'); return t; }
+                        // Eliminado: La restricción de no cambiar la tienda para la tarea fija de Clara Tienda, ya que Clara Tienda ahora tendrá tareas seleccionables.
                         const newFullName = newDetails.shop ? `${t.rawTaskName} [${newDetails.shop}]` : t.name;
                         if (prev.some(et => et.id !== id && et.name.toLowerCase() === newFullName.toLowerCase())) { setErrorMessage('Esa Tarea+Tienda ya existe.'); return t; }
                         setErrorMessage('');
@@ -370,6 +404,25 @@
             return (<div className="w-full h-full absolute top-0 left-0 overflow-hidden">{ghosts.map(style => (<svg key={style.key} className="ghost" style={style} viewBox="0 0 100 125"><path d="M10 115 C 10 115, 10 95, 20 95 C 30 95, 30 115, 30 115 C 30 115, 30 95, 40 95 C 50 95, 50 115, 50 115 C 50 115, 50 95, 60 95 C 70 95, 70 115, 70 115 C 70 115, 70 95, 80 95 C 90 95, 90 115, 90 115 L 90 60 C 90 20, 50 10, 50 10 C 50 10, 10 20, 10 60 Z M 30 60 C 35 60, 35 50, 30 50 C 25 50, 25 60, 30 60 Z M 70 60 C 75 60, 75 50, 70 50 C 65 50, 65 60, 70 60 Z" /></svg>))}</div>);
         };
         
+        const BackgroundMagic = ({ isBiancaBday }) => {
+            if (!isBiancaBday) return null;
+            const particles = useMemo(() => {
+                const emojis = ['🦄', '🐱', '✨', '💜', '❤️', '💖'];
+                return Array.from({ length: 100 }).map((_, i) => {
+                    return { 
+                        key: i, 
+                        left: `${Math.random() * 100}vw`, 
+                        fontSize: `${Math.random() * 1.5 + 0.75}rem`,
+                        opacity: Math.random() * 0.5 + 0.5,
+                        emoji: emojis[i % emojis.length],
+                        '--duration': `${Math.random() * 10 + 8}s`, 
+                        '--delay': `${Math.random() * 8}s` 
+                    };
+                });
+            }, []);
+            return (<div className="w-full h-full absolute top-0 left-0 overflow-hidden">{particles.map(style => <div key={style.key} className="magic-particle" style={style}>{style.emoji}</div>)}</div>);
+        };
+        
         const SpiderWeb = ({ isHalloween }) => {
             if (!isHalloween) return null;
             return (
@@ -381,22 +434,24 @@
         };
 
         const Title = ({ themeClasses, celebration }) => { 
-            const shadowStyle = celebration.theme === 'halloween' ? '[text-shadow:0_0_8px_rgba(255,165,0,0.6)]' : celebration.theme === 'party' ? '[text-shadow:0_0_10px_rgba(217,70,239,0.7)]' : '';
+            const shadowStyle = celebration.theme === 'halloween' ? '[text-shadow:0_0_8px_rgba(255,165,0,0.6)]' : celebration.theme === 'party' ? '[text-shadow:0_0_10px_rgba(217,70,239,0.7)]' : celebration.theme === 'biancaBday' ? '[text-shadow:0_0_12px_rgba(236,72,153,0.6)]' : '';
+            
             const renderIcon = (icon) => {
                 switch (icon) {
                     case 'halloween': return (<><span className="inline-block transform -rotate-12 scale-110 mr-2">👻</span>Task Manager TL<span className="inline-block transform rotate-12 scale-110 ml-2">🎃</span></>);
                     case 'christmas': return (<><span className="inline-block transform -rotate-12 scale-110 mr-2 text-3xl">🎅</span>Task Manager TL<span className="inline-block transform rotate-12 scale-110 ml-2 text-3xl">🎄</span></>);
                     case 'party': return (<><span className="inline-block transform -rotate-12 scale-110 mr-2 text-3xl">🎉</span>Task Manager TL<span className="inline-block transform rotate-12 scale-110 ml-2 text-3xl">🎂</span></>);
+                    case 'bianca': return (<><span className="inline-block transform -rotate-12 scale-110 mr-2 text-3xl">🦄</span>Task Manager TL<span className="inline-block transform rotate-12 scale-110 ml-2 text-3xl">🐱</span></>);
                     default: return 'Task Manager TL';
                 }
             };
+            
             return (
                 <div className="text-center mb-4"><h1 className={`text-4xl font-extrabold transition-colors duration-500 ${themeClasses.primaryText} ${themeClasses.titleFont} ${shadowStyle}`}>{renderIcon(celebration.icon)}</h1>{celebration.message && <p className={`mt-2 text-lg font-semibold animate-pulse ${themeClasses.accentText}`}>{celebration.message}</p>}</div>
             );
         };
         
-        // --- UPDATED COMPONENT ---
-        const TaskListItem = ({ task, toggleTimer, deleteTask, updateTaskDetails, themeClasses, resetTaskTimer }) => {
+        const TaskListItem = ({ task, toggleTimer, deleteTask, updateTaskDetails, themeClasses, resetTaskTimer, celebrationTheme }) => {
             const [isEditingTime, setIsEditingTime] = useState(false); 
             const [editedTime, setEditedTime] = useState(formatTime(task.elapsedTime)); 
             const [isEditingQuantity, setIsEditingQuantity] = useState(false); 
@@ -406,28 +461,33 @@
             const [isConfirmingReset, setIsConfirmingReset] = useState(false);
             
             const currentElapsedTime = task.running ? task.elapsedTime + (Date.now() - (task.lastTime || Date.now())) : task.elapsedTime; 
+            // La tarea fija de Clara Tienda ya no se usa, pero se mantiene la constante por si hay tareas antiguas guardadas.
             const isClaraTiendaFixedTask = task.rawTaskName === CLARA_TIENDA_TASK_NAME;
             
             const handleTimeEdit = () => { const parts = editedTime.split(':').map(Number); if (parts.length === 3 && !parts.some(isNaN)) { const totalMs = (parts[0] * 3600 + parts[1] * 60 + parts[2]) * 1000; updateTaskDetails(task.id, { elapsedTime: totalMs }); } setIsEditingTime(false); };
             const handleQuantityEdit = () => { updateTaskDetails(task.id, { quantity: parseInt(editedQuantity) || null }); setIsEditingQuantity(false); };
-            const handleShopEdit = () => { if (!isClaraTiendaFixedTask && editedShop) updateTaskDetails(task.id, { shop: editedShop }); setIsEditingShop(false); };
+            const handleShopEdit = () => { if (editedShop) updateTaskDetails(task.id, { shop: editedShop }); setIsEditingShop(false); };
             
             const handleResetClick = () => {
                 resetTaskTimer(task.id);
                 setIsConfirmingReset(false);
             };
 
+            const runningBorderClass = task.running 
+                ? (celebrationTheme === 'biancaBday' ? 'border-l-4 border-pink-400' : 'border-l-4 border-green-500') 
+                : 'border-l-4 border-gray-600';
+
             return (
-                <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 rounded-xl shadow-md ${themeClasses.itemBg} ${task.running ? 'border-l-4 border-green-500' : 'border-l-4 border-gray-600'}`}>
+                <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 rounded-xl shadow-md ${themeClasses.itemBg} ${runningBorderClass}`}>
                     
                     {/* Details Section */}
                     <div className="flex flex-col gap-1 min-w-0 flex-grow">
-                        {isEditingShop ? (<select value={editedShop} onChange={(e) => setEditedShop(e.target.value)} onBlur={handleShopEdit} onKeyPress={(e) => e.key === 'Enter' && handleShopEdit()} className={`px-2 py-1 border-b-2 bg-transparent focus:outline-none w-full sm:w-32 rounded ${themeClasses.accentText} border-yellow-500`} autoFocus>{shopOptions.map(o => <option key={o} value={o}>{o}</option>)}</select>) : (<span className={`font-bold text-sm transition-colors ${themeClasses.accentText} ${isClaraTiendaFixedTask ? 'cursor-default' : 'cursor-pointer hover:opacity-80'}`} onClick={() => !isClaraTiendaFixedTask && setIsEditingShop(true)}>{task.shop || 'Sin Tienda'}</span>)}
+                        {isEditingShop ? (<select value={editedShop} onChange={(e) => setEditedShop(e.target.value)} onBlur={handleShopEdit} onKeyPress={(e) => e.key === 'Enter' && handleShopEdit()} className={`px-2 py-1 border-b-2 bg-transparent focus:outline-none w-full sm:w-32 rounded ${themeClasses.accentText} border-pink-500`} autoFocus>{shopOptions.map(o => <option key={o} value={o}>{o}</option>)}</select>) : (<span className={`font-bold text-sm transition-colors ${themeClasses.accentText} cursor-pointer hover:opacity-80`} onClick={() => setIsEditingShop(true)}>{task.shop || 'Sin Tienda'}</span>)}
                         <span className={`font-medium text-lg break-words ${themeClasses.secondaryText}`}>{task.rawTaskName || task.name}</span>
                         {isEditingQuantity ? (<input type="number" value={editedQuantity} onChange={(e) => setEditedQuantity(e.target.value)} onBlur={handleQuantityEdit} onKeyPress={(e) => e.key === 'Enter' && handleQuantityEdit()} className={`font-mono text-lg border-b-2 bg-transparent focus:outline-none w-full sm:w-24 ${themeClasses.secondaryText} border-blue-500`} autoFocus />) : (<span className={`font-mono text-base cursor-pointer hover:opacity-80 transition-colors ${themeClasses.secondaryText}`} onClick={() => setIsEditingQuantity(true)}>{task.quantity ? `${task.quantity} órdenes` : '(sin cantidad)'}</span>)}
                     </div>
 
-                    {/* --- ACTIONS SECTION (MODIFICADO) --- */}
+                    {/* --- ACTIONS SECTION --- */}
                     <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto flex-shrink-0 pt-4 sm:pt-0 mt-4 sm:mt-0 border-t border-gray-700/60 sm:border-none">
                         {isEditingTime ? (
                             <input type="text" value={editedTime} onChange={(e) => setEditedTime(e.target.value)} onBlur={handleTimeEdit} onKeyPress={(e) => e.key === 'Enter' && handleTimeEdit()} placeholder="HH:MM:SS" className={`font-mono text-xl border-b-2 bg-transparent focus:outline-none w-28 ${themeClasses.primaryText} border-blue-500`} autoFocus />
@@ -437,11 +497,7 @@
                             </span>
                         )}
 
-                        {/* --- GRUPO DE BOTONES (MODIFICADO) --- 
-                          - Añadido 'flex-grow sm:flex-grow-0'
-                          - 'flex-grow' (móvil): El grupo de botones ocupa el espacio restante.
-                          - 'sm:flex-grow-0' (desktop): El grupo de botones vuelve a su tamaño normal.
-                        */}
+                        {/* --- GRUPO DE BOTONES --- */}
                         <div className="flex flex-col sm:flex-row sm:items-center items-end gap-2 flex-grow sm:flex-grow-0">
                             {/* Botón Principal (Iniciar/Detener) */}
                             <button 
@@ -458,7 +514,7 @@
                                         <button 
                                             onClick={handleResetClick}
                                             className="p-2 text-white bg-red-600 rounded-full hover:bg-red-700 transition duration-300"
-                                            title="Confirmar Reinicio"
+                                            title="Confirmar Reinicio y Cantidad"
                                         >
                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -478,8 +534,8 @@
                                     <>
                                         <button 
                                             onClick={() => setIsConfirmingReset(true)} 
-                                            className="p-2 text-gray-400 hover:text-yellow-500 transition duration-300"
-                                            title="Reiniciar Cronómetro"
+                                            className="p-2 text-gray-400 hover:text-pink-500 transition duration-300"
+                                            title="Reiniciar Cronómetro y Cantidad"
                                         >
                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m-15.357-2A8.001 8.001 0 0019.418 15m0 0H15" />
@@ -497,23 +553,73 @@
         };
         
         const TaskInputForm = ({ addTask, errorMessage, setErrorMessage, themeClasses }) => {
-            const [shopInput, setShopInput] = useState(''); const [taskInput, setTaskInput] = useState(''); const [customTaskName, setCustomTaskName] = useState(''); const [orderQuantity, setOrderQuantity] = useState(''); const [isCustomTask, setIsCustomTask] = useState(false); const isClaraTienda = shopInput === "Clara Tienda";
-            const handleShopChange = (e) => { const newShop = e.target.value; setShopInput(newShop); if (newShop === "Clara Tienda") { setTaskInput(''); setCustomTaskName(''); setIsCustomTask(false); } };
-            const handleTaskChange = (e) => { const value = e.target.value; setTaskInput(value); setIsCustomTask(value === "OTHER_CUSTOM_TASK"); if (value !== "OTHER_CUSTOM_TASK") setCustomTaskName(''); };
-            const handleSubmit = (e) => { e.preventDefault(); const taskName = isClaraTienda ? CLARA_TIENDA_TASK_NAME : (isCustomTask ? customTaskName.trim() : taskInput.trim()); const success = addTask({ shopInput, taskName, orderQuantity }); if (success) { setShopInput(shopInput); setTaskInput(''); setCustomTaskName(''); setOrderQuantity(''); setIsCustomTask(false); setErrorMessage(''); } };
+            const [shopInput, setShopInput] = useState(''); 
+            const [taskInput, setTaskInput] = useState(''); 
+            const [customTaskName, setCustomTaskName] = useState(''); 
+            const [orderQuantity, setOrderQuantity] = useState(''); 
+            const [isCustomTask, setIsCustomTask] = useState(false); 
+            // Eliminada la detección de isClaraTienda para permitir la selección de tareas
+
+            const handleShopChange = (e) => { 
+                const newShop = e.target.value; 
+                setShopInput(newShop); 
+                // Eliminado el código que limpiaba la tarea para Clara Tienda
+            };
+
+            const handleTaskChange = (e) => { 
+                const value = e.target.value; 
+                setTaskInput(value); 
+                setIsCustomTask(value === "OTHER_CUSTOM_TASK"); 
+                if (value !== "OTHER_CUSTOM_TASK") setCustomTaskName(''); 
+            };
+            
+            const handleSubmit = (e) => { 
+                e.preventDefault(); 
+                const taskName = isCustomTask ? customTaskName.trim() : taskInput.trim(); 
+                
+                if (!shopInput || !taskName || (isCustomTask && !customTaskName.trim())) { 
+                    setErrorMessage('Asegúrate de seleccionar una tienda y especificar una tarea.'); 
+                    return; 
+                }
+                
+                const success = addTask({ shopInput, taskName, orderQuantity }); 
+                if (success) { 
+                    setShopInput(shopInput); 
+                    setTaskInput(''); 
+                    setCustomTaskName(''); 
+                    setOrderQuantity(''); 
+                    setIsCustomTask(false); 
+                    setErrorMessage(''); 
+                } 
+            };
+
             const optionClasses = `${themeClasses.cardBg} ${themeClasses.primaryText}`;
             return (
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                     <div className="flex flex-col gap-2 w-full">
-                        <select value={shopInput} onChange={handleShopChange} className={`flex-1 px-5 py-3 border-2 ${themeClasses.cardBg} ${themeClasses.accentText} ${themeClasses.shopSelectBorder} rounded-full focus:outline-none transition-all font-semibold`} required><option value="" disabled className={optionClasses}>--- Seleccionar Tienda ---</option>{shopOptions.map(o => <option key={o} value={o} className={optionClasses}>{o}</option>)}</select>
-                        {!isClaraTienda && !isCustomTask && <select value={taskInput} onChange={handleTaskChange} className={`flex-1 px-5 py-3 border-2 ${themeClasses.cardBg} ${themeClasses.secondaryText} ${themeClasses.inputBorder} rounded-full focus:outline-none transition-all`} required={!isCustomTask}><option value="" disabled className={optionClasses}>Seleccionar tarea</option>{taskOptions.map(o => <option key={o} value={o} className={optionClasses}>{o}</option>)}<option value="OTHER_CUSTOM_TASK" className={optionClasses}>Otra</option></select>}
-                        {isClaraTienda && <div className={`flex-1 px-5 py-3 border-2 ${themeClasses.cardBg} ${themeClasses.secondaryText} ${themeClasses.inputBorder} rounded-full italic`}>Tarea fija: {CLARA_TIENDA_TASK_NAME}</div>}
-                        {!isClaraTienda && isCustomTask && <input type="text" value={customTaskName} onChange={e => setCustomTaskName(e.target.value)} placeholder="Nombre de la tarea" className={`flex-1 px-5 py-3 border-2 ${themeClasses.cardBg} ${themeClasses.secondaryText} ${themeClasses.inputBorder} rounded-full focus:outline-none transition-all`} required={isCustomTask} />}
+                        <select value={shopInput} onChange={handleShopChange} className={`flex-1 px-5 py-3 border-2 ${themeClasses.cardBg} ${themeClasses.accentText} ${themeClasses.shopSelectBorder} rounded-full focus:outline-none transition-all font-semibold`} required>
+                            <option value="" disabled className={optionClasses}>--- Seleccionar Tienda ---</option>
+                            {shopOptions.map(o => <option key={o} value={o} className={optionClasses}>{o}</option>)}
+                        </select>
+                        
+                        {/* MODIFICACIÓN 1: El selector de tareas ahora se muestra para todas las tiendas */}
+                        {!isCustomTask && (
+                            <select value={taskInput} onChange={handleTaskChange} className={`flex-1 px-5 py-3 border-2 ${themeClasses.cardBg} ${themeClasses.secondaryText} ${themeClasses.inputBorder} rounded-full focus:outline-none transition-all`} required>
+                                <option value="" disabled className={optionClasses}>Seleccionar tarea</option>
+                                {taskOptions.map(o => <option key={o} value={o} className={optionClasses}>{o}</option>)}
+                                <option value="OTHER_CUSTOM_TASK" className={optionClasses}>Otra</option>
+                            </select>
+                        )}
+                        
+                        {isCustomTask && (
+                            <input type="text" value={customTaskName} onChange={e => setCustomTaskName(e.target.value)} placeholder="Nombre de la tarea" className={`flex-1 px-5 py-3 border-2 ${themeClasses.cardBg} ${themeClasses.secondaryText} ${themeClasses.inputBorder} rounded-full focus:outline-none transition-all`} required />
+                        )}
+
                         <input type="number" value={orderQuantity} onChange={(e) => setOrderQuantity(e.target.value)} placeholder="Cantidad (opcional)" className={`flex-1 px-5 py-3 border-2 ${themeClasses.cardBg} ${themeClasses.secondaryText} ${themeClasses.inputBorder} rounded-full focus:outline-none transition-all`} />
                     </div>
                     {errorMessage && <p className="text-red-400 font-medium bg-red-900/50 p-3 rounded-xl text-center">{errorMessage}</p>}
                     <button type="submit" className={`px-6 py-3 rounded-full font-semibold transition duration-300 shadow-lg w-full sm:w-auto ${themeClasses.buttonAdd}`}>Agregar Tarea</button>
-                    {isCustomTask && !isClaraTienda && <button type="button" onClick={() => { setIsCustomTask(false); setTaskInput(''); }} className="text-gray-400 hover:text-white mt-2">Cancelar Tarea Personalizada</button>}
+                    {isCustomTask && <button type="button" onClick={() => { setIsCustomTask(false); setTaskInput(''); }} className="text-gray-400 hover:text-white mt-2">Cancelar Tarea Personalizada</button>}
                 </form>
             );
         };
@@ -537,25 +643,35 @@
                     return [...prev, newReport].sort((a, b) => b.id.localeCompare(a.id));
                 });
             };
-            const cardGlowClass = celebration.theme === 'halloween' ? 'glow-card' : celebration.theme === 'party' ? 'party-glow-card' : '';
+            const cardGlowClass = celebration.theme === 'halloween' ? 'glow-card' : (celebration.theme === 'party' || celebration.theme === 'biancaBday') ? 'party-glow-card' : '';
+            
             return (
-                <div className={`max-w-xl w-11/12 mx-auto rounded-2xl shadow-xl p-8 pt-12 space-y-6 transition-colors duration-500 ${themeClasses.cardBg} max-h-[95vh] overflow-y-auto hide-scrollbar relative ${cardGlowClass}`}>
+                <div className={`max-w-xl w-11/12 mx-auto rounded-2xl shadow-xl p-8 pt-12 transition-colors duration-500 ${themeClasses.cardBg} max-h-[95vh] overflow-y-auto hide-scrollbar relative ${cardGlowClass}`}>
+                    {/* Fondos (z-index bajo) */}
                     <SpiderWeb isHalloween={celebration.theme === 'halloween'} />
-                    <Title themeClasses={themeClasses} celebration={celebration} />
-                    <TaskInputForm {...{ addTask, errorMessage, setErrorMessage, themeClasses }} />
-                    <div className="space-y-4">
-                        <hr className="border-t border-gray-600" />
-                        <div className="flex justify-end"><button onClick={sortTasksByShop} className="bg-gray-600 text-white px-4 py-2 text-sm rounded-full font-semibold hover:bg-gray-700 transition duration-300 shadow-lg">Ordenar por Tienda</button></div>
-                        {tasks.length > 0 ? tasks.map((task) => (<TaskListItem key={task.id} {...{ task, toggleTimer, deleteTask, updateTaskDetails, themeClasses, resetTaskTimer }}/>)) : (<p className="text-center text-gray-400 italic">No hay tareas.</p>)}
-                    </div>
-                    <div className="flex flex-col items-center">
-                        <button onClick={generateReport} className={`px-6 py-3 rounded-full font-semibold transition duration-300 shadow-lg mb-4 ${themeClasses.buttonAction}`}>Generar E.O.D.R.</button>
-                        <div className={`w-full p-5 rounded-xl font-mono text-sm whitespace-pre-wrap transition-colors duration-500 ${themeClasses.itemBg} ${themeClasses.secondaryText}`}>{reportOutput || 'El reporte aparecerá aquí...'}</div>
-                    </div>
-                    <hr className="border-t border-gray-600" />
-                    <div className="space-y-4">
-                        <h2 className={`text-2xl font-bold text-center ${themeClasses.primaryText}`}>Historial de Reportes</h2>
-                        {pastReports.length > 0 ? (pastReports.map((report) => (<div key={report.id} className={`rounded-xl p-5 shadow-md transition-colors duration-500 ${themeClasses.itemBg}`}><pre className={`font-mono text-sm whitespace-pre-wrap ${themeClasses.secondaryText}`}>{report.content}</pre></div>))) : (<p className="text-center text-gray-400 italic">No hay reportes anteriores.</p>)}
+                    
+                    {/* Contenido (z-index eliminado) */}
+                    <div className="relative space-y-6"> {/* z-10 eliminado */}
+                        <Title themeClasses={themeClasses} celebration={celebration} />
+                        <TaskInputForm {...{ addTask, errorMessage, setErrorMessage, themeClasses }} />
+                        
+                        <div className="space-y-4">
+                            <hr className={`border-t ${themeClasses.inputBorder}`} />
+                            <div className="flex justify-end"><button onClick={sortTasksByShop} className="bg-gray-600 text-white px-4 py-2 text-sm rounded-full font-semibold hover:bg-gray-700 transition duration-300 shadow-lg">Ordenar por Tienda</button></div>
+                            {tasks.length > 0 ? tasks.map((task) => (<TaskListItem key={task.id} {...{ task, toggleTimer, deleteTask, updateTaskDetails, themeClasses, resetTaskTimer }} celebrationTheme={celebration.theme} />)) : (<p className={`text-center italic ${themeClasses.secondaryText}`}>No hay tareas.</p>)}
+                        </div>
+                        
+                        <div className="flex flex-col items-center">
+                            <button onClick={generateReport} className={`px-6 py-3 rounded-full font-semibold transition duration-300 shadow-lg mb-4 ${themeClasses.buttonAction}`}>Generar E.O.D.R.</button>
+                            <div className={`w-full p-5 rounded-xl font-mono text-sm whitespace-pre-wrap transition-colors duration-500 ${themeClasses.itemBg} ${themeClasses.secondaryText}`}>{reportOutput || 'El reporte aparecerá aquí...'}</div>
+                        </div>
+                        
+                        <hr className={`border-t ${themeClasses.inputBorder}`} />
+                        
+                        <div className="space-y-4">
+                            <h2 className={`text-2xl font-bold text-center ${themeClasses.primaryText}`}>Historial de Reportes</h2>
+                            {pastReports.length > 0 ? (pastReports.map((report) => (<div key={report.id} className={`rounded-xl p-5 shadow-md transition-colors duration-500 ${themeClasses.itemBg}`}><pre className={`font-mono text-sm whitespace-pre-wrap ${themeClasses.secondaryText}`}>{report.content}</pre></div>))) : (<p className={`text-center italic ${themeClasses.secondaryText}`}>No hay reportes anteriores.</p>)}
+                        </div>
                     </div>
                 </div>
             );
@@ -570,14 +686,15 @@
                     <BackgroundConfetti isParty={celebration.theme === 'party'} />
                     <BackgroundSnow isChristmas={celebration.theme === 'christmas'} />
                     <BackgroundChristmasLights isChristmas={celebration.theme === 'christmas'} />
+                    <BackgroundMagic isBiancaBday={celebration.theme === 'biancaBday'} />
+                    
                     <App />
                 </>
             );
         }
 
-        ReactDOM.render(<ThemeWrapper />, document.getElementById('root'));
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<ThemeWrapper />);
     </script>
-</body>
-</html>
 </body>
 </html>
