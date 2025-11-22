@@ -238,15 +238,12 @@
 
         const parseTimeStringToMs = (timeStr) => {
             if (!timeStr) return 0;
-            // Try formats: HH:MM:SS, HH:MM, or just Minutes
             let hours = 0, minutes = 0, seconds = 0;
-            
             if (timeStr.includes(':')) {
                 const parts = timeStr.split(':').map(Number);
                 if (parts.length === 3) { [hours, minutes, seconds] = parts; }
                 else if (parts.length === 2) { [hours, minutes] = parts; }
             } else {
-                // Assume minutes if just a number
                 minutes = parseInt(timeStr) || 0;
             }
             return (hours * 3600 + minutes * 60 + seconds) * 1000;
@@ -643,6 +640,63 @@
             );
         };
 
+        // NEW: Reusable Report Viewer Component with Copy Button
+        const ReportViewer = ({ content, themeClasses, placeholder }) => {
+            const [isCopied, setIsCopied] = useState(false);
+
+            const handleCopy = () => {
+                if (!content) return;
+                
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(content).then(() => {
+                        setIsCopied(true);
+                        setTimeout(() => setIsCopied(false), 2000);
+                    });
+                } else {
+                    // Fallback
+                    const textArea = document.createElement("textarea");
+                    textArea.value = content;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    try {
+                        document.execCommand('copy');
+                        setIsCopied(true);
+                        setTimeout(() => setIsCopied(false), 2000);
+                    } catch (err) {
+                        console.error('Fallback copy failed', err);
+                    }
+                    document.body.removeChild(textArea);
+                }
+            };
+
+            return (
+                <div className="relative w-full group">
+                    <div className={`w-full p-5 rounded-xl font-mono text-sm whitespace-pre-wrap transition-colors duration-500 ${themeClasses.itemBg} ${themeClasses.secondaryText} min-h-[100px]`}>
+                        {content || <p className="text-center opacity-70 italic pt-8">{placeholder}</p>}
+                    </div>
+                    {content && (
+                        <button 
+                            onClick={handleCopy} 
+                            className={`absolute top-2 right-2 px-3 py-1 text-xs font-bold rounded transition-all duration-200 shadow-md flex items-center gap-1 ${isCopied ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}`}
+                            title="Copiar reporte"
+                        >
+                            {isCopied ? (
+                                <>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                                    ¡Copiado!
+                                </>
+                            ) : (
+                                <>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
+                                    Copiar
+                                </>
+                            )}
+                        </button>
+                    )}
+                </div>
+            );
+        };
+
         const CalendarWidget = ({ reports, selectedDate, onSelectDate, themeClasses }) => {
             // ... (CalendarWidget code kept exactly the same) ...
             const [viewDate, setViewDate] = useState(new Date());
@@ -860,7 +914,6 @@
             const [pastReports, setPastReports] = usePersistentState('reports', []);
             const [reportOutput, setReportOutput] = useState('');
             const [calendarSelectedDate, setCalendarSelectedDate] = useState(getTodayID());
-            const [isCopied, setIsCopied] = useState(false);
             
             // Report Config State
             const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -881,32 +934,6 @@
             const handleGenerateReportClick = () => {
                 // Open Modal instead of generating immediately
                 setIsReportModalOpen(true);
-            };
-
-            const handleCopyReport = () => {
-                if (!reportOutput) return;
-                
-                // Use standard clipboard API where available, fallback to textarea for older contexts
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(reportOutput).then(() => {
-                        setIsCopied(true);
-                        setTimeout(() => setIsCopied(false), 2000);
-                    });
-                } else {
-                    // Fallback
-                    const textArea = document.createElement("textarea");
-                    textArea.value = reportOutput;
-                    document.body.appendChild(textArea);
-                    textArea.select();
-                    try {
-                        document.execCommand('copy');
-                        setIsCopied(true);
-                        setTimeout(() => setIsCopied(false), 2000);
-                    } catch (err) {
-                        console.error('Fallback copy failed', err);
-                    }
-                    document.body.removeChild(textArea);
-                }
             };
 
             const confirmGenerateReport = () => {
@@ -972,30 +999,7 @@
                             <div className="flex flex-col items-center w-full">
                                 <button onClick={handleGenerateReportClick} className={`px-6 py-3 rounded-full font-semibold transition duration-300 shadow-lg mb-4 ${themeClasses.buttonAction}`}>Generar E.O.D.R.</button>
                                 
-                                <div className="relative w-full group">
-                                    <div className={`w-full p-5 rounded-xl font-mono text-sm whitespace-pre-wrap transition-colors duration-500 ${themeClasses.itemBg} ${themeClasses.secondaryText}`}>
-                                        {reportOutput || 'El reporte aparecerá aquí...'}
-                                    </div>
-                                    {reportOutput && (
-                                        <button 
-                                            onClick={handleCopyReport} 
-                                            className={`absolute top-2 right-2 px-3 py-1 text-xs font-bold rounded transition-all duration-200 shadow-md flex items-center gap-1 ${isCopied ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}`}
-                                            title="Copiar reporte para Slack"
-                                        >
-                                            {isCopied ? (
-                                                <>
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                                                    ¡Copiado!
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
-                                                    Copiar
-                                                </>
-                                            )}
-                                        </button>
-                                    )}
-                                </div>
+                                <ReportViewer content={reportOutput} themeClasses={themeClasses} placeholder="El reporte aparecerá aquí..." />
                             </div>
                             
                             <hr className={`border-t ${themeClasses.inputBorder}`} />
@@ -1003,14 +1007,9 @@
                             <div className="space-y-4">
                                 <h2 className={`text-2xl font-bold text-center ${themeClasses.primaryText}`}>Calendario de Reportes</h2>
                                 <CalendarWidget reports={pastReports} selectedDate={calendarSelectedDate} onSelectDate={setCalendarSelectedDate} themeClasses={themeClasses} />
-                                <div className={`rounded-xl p-5 shadow-md transition-colors duration-500 ${themeClasses.itemBg} min-h-[150px]`}>
-                                    <h3 className={`font-bold mb-2 ${themeClasses.accentText}`}>Reporte del: {calendarSelectedDate}</h3>
-                                    {selectedReportContent ? (
-                                        <pre className={`font-mono text-sm whitespace-pre-wrap ${themeClasses.secondaryText}`}>{selectedReportContent}</pre>
-                                    ) : (
-                                        <p className={`text-center italic ${themeClasses.secondaryText} mt-8 opacity-70`}>No hay reporte guardado para este día.</p>
-                                    )}
-                                </div>
+                                
+                                <h3 className={`font-bold mb-2 ${themeClasses.accentText}`}>Reporte del: {calendarSelectedDate}</h3>
+                                <ReportViewer content={selectedReportContent} themeClasses={themeClasses} placeholder="No hay reporte guardado para este día." />
                             </div>
                         </div>
                     </div>
