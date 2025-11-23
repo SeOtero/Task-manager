@@ -224,7 +224,31 @@
 
         const shopOptions = ["Tienda Lujosa", "Clara Tienda", "Clara Tierra"];
         const CLARA_TIENDA_TASK_NAME = "Órdenes / Tarea Única";
-        const taskOptions = ["Columna CONFIRMADO", "Columna POR UPSELL", "Columna DATOS ENTREGA", "Columna RESPONDER", "Columna FALLIDO", "Columna REMINDER", "Columna PENDIENTE", "Chat en vivo (filtro Abiertos)", "Chat en vivo (filtro Pendiente)", "Ordenes confirmadas sheet (CHECK info)", "CHAT Pending Orders", "CALL Pending Orders", "Facebook/Instagram Comments & Chats", "Meeting"];
+        
+        // --- 1. Separamos las tareas comunes de las tareas específicas de llamadas ---
+        const commonTaskOptions = [
+            "Columna CONFIRMADO", 
+            "Columna POR UPSELL", 
+            "Columna DATOS ENTREGA", 
+            "Columna RESPONDER", 
+            "Columna FALLIDO", 
+            "Columna REMINDER", 
+            "Columna PENDIENTE", 
+            "Chat en vivo (filtro Abiertos)", 
+            "Chat en vivo (filtro Pendiente)", 
+            "Ordenes confirmadas sheet (CHECK info)", 
+            "CHAT Pending Orders", 
+            // "CALL Pending Orders" ELIMINADO
+            "Facebook/Instagram Comments & Chats", 
+            "Meeting"
+        ];
+
+        // --- 2. Mapeo de tareas específicas por Tienda ---
+        const shopSpecificCallTasks = {
+            "Tienda Lujosa": "Llamadas TL",
+            "Clara Tienda": "Llamadas CTienda",
+            "Clara Tierra": "Llamadas CTierra"
+        };
         
         // --- SECTION: UTILITY FUNCTIONS ---
         const formatTime = (ms) => {
@@ -345,7 +369,26 @@
 
             useEffect(() => {
                 const interval = setInterval(() => {
-                    setTasks(currentTasks => currentTasks.map(t => t.running ? { ...t, elapsedTime: t.elapsedTime + (Date.now() - t.lastTime), lastTime: Date.now() } : t));
+                    setTasks(currentTasks => currentTasks.map(t => {
+                        if (!t.running) return t; // Si no corre, la ignoramos
+
+                        const now = Date.now();
+                        const timeDiff = now - (t.lastTime || now);
+
+                        // --- PROTECCIÓN ANTI-BUG (NAN FIX) ---
+                        // Si detectamos corrupción matemática (NaN), reseteamos la tarea para salvarla
+                        if (isNaN(t.elapsedTime) || isNaN(timeDiff)) {
+                            console.warn(`Tarea corrupta detectada y reparada: ${t.name}`);
+                            return { ...t, running: false, elapsedTime: 0, lastTime: null };
+                        }
+                        // -------------------------------------
+
+                        return { 
+                            ...t, 
+                            elapsedTime: t.elapsedTime + timeDiff, 
+                            lastTime: now 
+                        };
+                    }));
                 }, 1000);
                 return () => clearInterval(interval);
             }, [setTasks]);
@@ -355,7 +398,12 @@
                 if (!shopInput || !taskName) { setErrorMessage('Completa todos los campos.'); return false; }
                 const fullTaskName = `${taskName} [${shopInput}]`;
                 if (tasks.some(t => t.name.toLowerCase() === fullTaskName.toLowerCase())) { setErrorMessage(`La tarea "${fullTaskName}" ya existe.`); return false; }
-                const isCustom = !taskOptions.includes(taskName);
+                
+                // Verificar si es custom (no está en comunes ni en específicas)
+                const isCommon = commonTaskOptions.includes(taskName);
+                const isSpecific = Object.values(shopSpecificCallTasks).includes(taskName);
+                const isCustom = !isCommon && !isSpecific;
+
                 const newTask = { id: Date.now(), name: fullTaskName, rawTaskName: taskName, shop: shopInput, quantity: orderQuantity ? parseInt(orderQuantity) : null, elapsedTime: 0, running: false, lastTime: null, isCustom };
                 setTasks(prev => [...prev, newTask]);
                 setErrorMessage('');
@@ -731,22 +779,56 @@
             );
         };
         
+        // --- MODIFICADO: Formulario Inteligente (Filtro Dinámico) ---
         const TaskInputForm = ({ addTask, errorMessage, setErrorMessage, themeClasses }) => {
-            // ... (TaskInputForm code kept exactly the same) ...
             const [shopInput, setShopInput] = useState(''); 
             const [taskInput, setTaskInput] = useState(''); 
             const [customTaskName, setCustomTaskName] = useState(''); 
             const [orderQuantity, setOrderQuantity] = useState(''); 
             const [isCustomTask, setIsCustomTask] = useState(false); 
+            
+            // Efecto: Cuando cambia la tienda, reseteamos la tarea para evitar conflictos
+            useEffect(() => {
+                setTaskInput('');
+            }, [shopInput]);
+
+            // Lógica de filtrado dinámico
+            const availableTasks = useMemo(() => {
+                let options = [...commonTaskOptions];
+                
+                // Solo si hay una tienda seleccionada, agregamos su tarea específica
+                if (shopInput && shopSpecificCallTasks[shopInput]) {
+                    // La agregamos al principio para que sea fácil de encontrar
+                    options = [shopSpecificCallTasks[shopInput], ...options];
+                }
+                
+                return options;
+            }, [shopInput]);
+
             const handleShopChange = (e) => { setShopInput(e.target.value); };
             const handleTaskChange = (e) => { const value = e.target.value; setTaskInput(value); setIsCustomTask(value === "OTHER_CUSTOM_TASK"); if (value !== "OTHER_CUSTOM_TASK") setCustomTaskName(''); };
             const handleSubmit = (e) => { e.preventDefault(); const finalTaskName = isCustomTask ? customTaskName.trim() : taskInput.trim(); if (!shopInput || !finalTaskName) { setErrorMessage('Asegúrate de seleccionar una tienda y especificar una tarea.'); return; } const success = addTask({ shopInput, taskName: finalTaskName, orderQuantity }); if (success) { setShopInput(shopInput); setTaskInput(''); setCustomTaskName(''); setOrderQuantity(''); setIsCustomTask(false); setErrorMessage(''); } };
             const optionClasses = `${themeClasses.cardBg} ${themeClasses.primaryText}`;
+            
             return (
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                     <div className="flex flex-col gap-2 w-full">
                         <select value={shopInput} onChange={handleShopChange} className={`flex-1 px-5 py-3 border-2 ${themeClasses.cardBg} ${themeClasses.accentText} ${themeClasses.shopSelectBorder} rounded-full focus:outline-none transition-all font-semibold`} required> <option value="" disabled className={optionClasses}>--- Seleccionar Tienda ---</option> {shopOptions.map(o => <option key={o} value={o} className={optionClasses}>{o}</option>)} </select>
-                        {!isCustomTask && ( <select value={taskInput} onChange={handleTaskChange} className={`flex-1 px-5 py-3 border-2 ${themeClasses.cardBg} ${themeClasses.secondaryText} ${themeClasses.inputBorder} rounded-full focus:outline-none transition-all`} required> <option value="" disabled className={optionClasses}>Seleccionar tarea</option> {taskOptions.map(o => <option key={o} value={o} className={optionClasses}>{o}</option>)} <option value="OTHER_CUSTOM_TASK" className={optionClasses}>Otra</option> </select> )}
+                        {!isCustomTask && ( 
+                            <select 
+                                value={taskInput} 
+                                onChange={handleTaskChange} 
+                                className={`flex-1 px-5 py-3 border-2 ${themeClasses.cardBg} ${themeClasses.secondaryText} ${themeClasses.inputBorder} rounded-full focus:outline-none transition-all ${!shopInput ? 'opacity-50 cursor-not-allowed' : ''}`} 
+                                disabled={!shopInput} // Deshabilitar si no hay tienda
+                                required
+                            > 
+                                <option value="" disabled className={optionClasses}>
+                                    {shopInput ? "Seleccionar tarea" : "Primero selecciona una tienda"}
+                                </option> 
+                                {availableTasks.map(o => <option key={o} value={o} className={optionClasses}>{o}</option>)} 
+                                <option value="OTHER_CUSTOM_TASK" className={optionClasses}>Otra</option> 
+                            </select> 
+                        )}
                         {isCustomTask && ( <input type="text" value={customTaskName} onChange={e => setCustomTaskName(e.target.value)} placeholder="Nombre de la tarea" className={`flex-1 px-5 py-3 border-2 ${themeClasses.cardBg} ${themeClasses.secondaryText} ${themeClasses.inputBorder} rounded-full focus:outline-none transition-all`} required /> )}
                         <input type="number" value={orderQuantity} onChange={(e) => setOrderQuantity(e.target.value)} placeholder="Cantidad (opcional)" className={`flex-1 px-5 py-3 border-2 ${themeClasses.cardBg} ${themeClasses.secondaryText} ${themeClasses.inputBorder} rounded-full focus:outline-none transition-all`} />
                     </div>
