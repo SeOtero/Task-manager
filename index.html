@@ -7,6 +7,7 @@
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -191,6 +192,30 @@
         .modal-content {
             animation: modal-pop 0.3s ease-out forwards;
         }
+
+        /* --- Salary Fab Button Animation (Wiggle & Shine) --- */
+        @keyframes wiggle-badge {
+            0%, 100% { transform: rotate(-5deg); }
+            50% { transform: rotate(5deg); }
+        }
+        .wiggle-animation {
+            animation: wiggle-badge 1s ease-in-out infinite;
+        }
+
+        /* Shine Sweep Animation */
+        @keyframes shine-sweep {
+            0% { transform: translateX(-150%) skewX(-25deg); }
+            100% { transform: translateX(150%) skewX(-25deg); }
+        }
+        .shine-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.7), transparent);
+            animation: shine-sweep 3s infinite ease-in-out;
+        }
         
     </style>
 </head>
@@ -225,12 +250,11 @@
         const shopOptions = ["Tienda Lujosa", "Clara Tienda", "Clara Tierra"];
         const CLARA_TIENDA_TASK_NAME = "Órdenes / Tarea Única";
         
-        // --- 1. Separamos las tareas comunes de las tareas específicas de llamadas ---
         const commonTaskOptions = [
             "Columna CONFIRMADO", 
             "Columna POR UPSELL", 
             "Columna DATOS ENTREGA", 
-            "Columna RESPONDER",
+            "Columna RESPONDER", 
             "Columna REMINDER",
             "Columna LATE VERIFICATION",
             "Chat en vivo (filtro Abiertos)", 
@@ -241,7 +265,6 @@
             "Meeting"
         ];
 
-        // --- 2. Mapeo de tareas específicas por Tienda ---
         const shopSpecificCallTasks = {
             "Tienda Lujosa": "Llamadas TL",
             "Clara Tienda": "Llamadas CTienda",
@@ -316,6 +339,17 @@
             return `End of Day Report: ${displayDate}\nHours worked: ${totalTimeString}\n\nToday I worked on the following tasks:\n${formattedReport.join('\n')}`;
         };
 
+        const parseHoursFromReport = (content) => {
+            if (!content) return 0;
+            const match = content.match(/Hours worked: (\d+)h (\d+)m/);
+            if (match) {
+                const h = parseInt(match[1], 10);
+                const m = parseInt(match[2], 10);
+                return h + (m / 60);
+            }
+            return 0;
+        };
+
         // --- SECTION: CUSTOM HOOKS ---
         const usePersistentState = (key, initialValue) => {
             const [state, setState] = useState(() => {
@@ -368,19 +402,12 @@
             useEffect(() => {
                 const interval = setInterval(() => {
                     setTasks(currentTasks => currentTasks.map(t => {
-                        if (!t.running) return t; // Si no corre, la ignoramos
-
+                        if (!t.running) return t; 
                         const now = Date.now();
                         const timeDiff = now - (t.lastTime || now);
-
-                        // --- PROTECCIÓN ANTI-BUG (NAN FIX) ---
-                        // Si detectamos corrupción matemática (NaN), reseteamos la tarea para salvarla
                         if (isNaN(t.elapsedTime) || isNaN(timeDiff)) {
-                            console.warn(`Tarea corrupta detectada y reparada: ${t.name}`);
                             return { ...t, running: false, elapsedTime: 0, lastTime: null };
                         }
-                        // -------------------------------------
-
                         return { 
                             ...t, 
                             elapsedTime: t.elapsedTime + timeDiff, 
@@ -397,7 +424,6 @@
                 const fullTaskName = `${taskName} [${shopInput}]`;
                 if (tasks.some(t => t.name.toLowerCase() === fullTaskName.toLowerCase())) { setErrorMessage(`La tarea "${fullTaskName}" ya existe.`); return false; }
                 
-                // Verificar si es custom (no está en comunes ni en específicas)
                 const isCommon = commonTaskOptions.includes(taskName);
                 const isSpecific = Object.values(shopSpecificCallTasks).includes(taskName);
                 const isCustom = !isCommon && !isSpecific;
@@ -489,7 +515,6 @@
                 }));
             }, [setTasks]);
 
-            // Enhanced function to handle time syncing (single or all)
             const syncTasksTime = useCallback((diffMs, distributionMode, targetTaskId) => {
                 setTasks(prev => {
                     const now = Date.now();
@@ -497,29 +522,22 @@
                     if (distributionMode === 'all') {
                         const count = prev.length;
                         if (count === 0) return prev;
-                        
                         const perTask = Math.floor(diffMs / count);
                         const remainder = diffMs % count;
                         
                         return prev.map((t, index) => {
                             const currentTaskTime = t.running ? t.elapsedTime + (now - t.lastTime) : t.elapsedTime;
                             let extra = perTask;
-                            // Add remainder to the first task to be mathematically precise
                             if (index === 0) extra += remainder;
-                            
                             let newElapsedTime = currentTaskTime + extra;
                             if (newElapsedTime < 0) newElapsedTime = 0;
-                            
-                            // Preserve running state logic is tricky here if we update elapsedTime directly
-                            // But standard approach is update base elapsedTime and reset lastTime if running
                             return { 
                                 ...t, 
                                 elapsedTime: newElapsedTime,
-                                lastTime: t.running ? now : null // Reset reference point so we don't double count
+                                lastTime: t.running ? now : null 
                             };
                         });
                     } else {
-                        // Single Task Mode
                         return prev.map(t => {
                             if (t.id == targetTaskId) {
                                 const currentTaskTime = t.running ? t.elapsedTime + (now - t.lastTime) : t.elapsedTime;
@@ -544,61 +562,13 @@
 
         // --- SECTION: UI COMPONENTS ---
 
-        // ... (Background Components kept same as before to save space, they work fine) ...
-        const BackgroundParticles = ({ isHalloween }) => {
-            if (!isHalloween) return null;
-            const particles = useMemo(() => Array.from({ length: 80 }).map((_, i) => ({ key: i, left: `${Math.random() * 100}vw`, size: `${2 + Math.random() * 5}px`, duration: `${20 + Math.random() * 20}s`, delay: `${Math.random() * 15}s`, randX: `${(Math.random() - 0.5) * 350}` })), []);
-            return (<div className="w-full h-full absolute top-0 left-0">{particles.map(p => <div key={p.key} className="particle animate-particle" style={{ left: p.left, width: p.size, height: p.size, '--duration': p.duration, '--rand-x': p.randX, animationDelay: p.delay }} />)}</div>);
-        };
-        const BackgroundConfetti = ({ isParty }) => {
-            if (!isParty) return null;
-            const confettiPieces = useMemo(() => {
-                const colors = ['#f43f5e', '#ec4899', '#8b5cf6', '#38bdf8'];
-                return Array.from({ length: 100 }).map((_, i) => {
-                    const size = Math.random() * 8 + 4; const isSquare = Math.random() > 0.5;
-                    return { key: i, left: `${Math.random() * 100}vw`, width: `${size}px`, height: `${size}px`, backgroundColor: colors[Math.floor(Math.random() * colors.length)], borderRadius: isSquare ? '2px' : '50%', transform: `rotate(${Math.random() * 360}deg)`, '--duration': `${Math.random() * 5 + 5}s`, '--delay': `${Math.random() * 5}s` };
-                });
-            }, []);
-            return (<div className="w-full h-full absolute top-0 left-0 overflow-hidden">{confettiPieces.map(style => <div key={style.key} className="confetti" style={style} />)}</div>);
-        };
-        const BackgroundSnow = ({ isChristmas }) => {
-            if (!isChristmas) return null;
-            const snowflakes = useMemo(() => Array.from({ length: 150 }).map((_, i) => {
-                const size = Math.random() * 4 + 2;
-                return { key: i, left: `${Math.random() * 100}vw`, width: `${size}px`, height: `${size}px`, '--duration': `${Math.random() * 10 + 10}s`, '--delay': `${Math.random() * 10}s`, '--drift': Math.random() - 0.5 };
-            }), []);
-            return (<div className="w-full h-full absolute top-0 left-0 overflow-hidden">{snowflakes.map(style => <div key={style.key} className="snowflake" style={style} />)}</div>);
-        };
-        const BackgroundChristmasLights = ({ isChristmas }) => {
-            if (!isChristmas) return null;
-            const lights = useMemo(() => {
-                const colors = ['#f44336', '#4caf50', '#2196f3', '#ffeb3b'];
-                return Array.from({ length: 40 }).map((_, i) => {
-                    const size = Math.random() * 10 + 5;
-                    return { key: i, top: `${Math.random() * 100}vh`, left: `${Math.random() * 100}vw`, width: `${size}px`, height: `${size}px`, backgroundColor: colors[i % colors.length], boxShadow: `0 0 15px 5px ${colors[i % colors.length]}66`, '--duration': `${Math.random() * 2 + 1.5}s`, animationDelay: `${Math.random() * 2}s` };
-                });
-            }, []);
-            return (<div className="w-full h-full absolute top-0 left-0">{lights.map(style => <div key={style.key} className="christmas-light" style={style} />)}</div>);
-        };
-        const BackgroundGhost = ({ isHalloween }) => {
-            if (!isHalloween) return null;
-            const ghosts = useMemo(() => Array.from({ length: 5 }).map((_, i) => ({ key: i, '--duration': `${Math.random() * 15 + 10}s`, '--delay': `${Math.random() * 10}s`, '--start-x': `${Math.random() * 80 + 10}vw`, '--end-x': `${Math.random() * 80 + 10}vw`, width: `${Math.random() * 50 + 50}px` })), []);
-            return (<div className="w-full h-full absolute top-0 left-0 overflow-hidden">{ghosts.map(style => (<svg key={style.key} className="ghost" style={style} viewBox="0 0 100 125"><path d="M10 115 C 10 115, 10 95, 20 95 C 30 95, 30 115, 30 115 C 30 115, 30 95, 40 95 C 50 95, 50 115, 50 115 C 50 115, 50 95, 60 95 C 70 95, 70 115, 70 115 C 70 115, 70 95, 80 95 C 90 95, 90 115, 90 115 L 90 60 C 90 20, 50 10, 50 10 C 50 10, 10 20, 10 60 Z M 30 60 C 35 60, 35 50, 30 50 C 25 50, 25 60, 30 60 Z M 70 60 C 75 60, 75 50, 70 50 C 65 50, 65 60, 70 60 Z" /></svg>))}</div>);
-        };
-        const BackgroundMagic = ({ isBiancaBday }) => {
-            if (!isBiancaBday) return null;
-            const particles = useMemo(() => {
-                const emojis = ['🦄', '🐱', '✨', '💜', '❤️', '💖'];
-                return Array.from({ length: 100 }).map((_, i) => {
-                    return { key: i, left: `${Math.random() * 100}vw`, fontSize: `${Math.random() * 1.5 + 0.75}rem`, opacity: Math.random() * 0.5 + 0.5, emoji: emojis[i % emojis.length], '--duration': `${Math.random() * 10 + 8}s`, '--delay': `${Math.random() * 8}s` };
-                });
-            }, []);
-            return (<div className="w-full h-full absolute top-0 left-0 overflow-hidden">{particles.map(style => <div key={style.key} className="magic-particle" style={style}>{style.emoji}</div>)}</div>);
-        };
-        const SpiderWeb = ({ isHalloween }) => {
-            if (!isHalloween) return null;
-            return (<><div className="spider-web"><div className="line1"></div><div className="line2"></div></div><div className="spider-web" style={{ left: 'auto', right: 0, transform: 'scaleX(-1)' }}><div className="line1"></div><div className="line2"></div></div></>);
-        };
+        const BackgroundParticles = ({ isHalloween }) => { if (!isHalloween) return null; const particles = useMemo(() => Array.from({ length: 80 }).map((_, i) => ({ key: i, left: `${Math.random() * 100}vw`, size: `${2 + Math.random() * 5}px`, duration: `${20 + Math.random() * 20}s`, delay: `${Math.random() * 15}s`, randX: `${(Math.random() - 0.5) * 350}` })), []); return (<div className="w-full h-full absolute top-0 left-0">{particles.map(p => <div key={p.key} className="particle animate-particle" style={{ left: p.left, width: p.size, height: p.size, '--duration': p.duration, '--rand-x': p.randX, animationDelay: p.delay }} />)}</div>); };
+        const BackgroundConfetti = ({ isParty }) => { if (!isParty) return null; const confettiPieces = useMemo(() => { const colors = ['#f43f5e', '#ec4899', '#8b5cf6', '#38bdf8']; return Array.from({ length: 100 }).map((_, i) => { const size = Math.random() * 8 + 4; const isSquare = Math.random() > 0.5; return { key: i, left: `${Math.random() * 100}vw`, width: `${size}px`, height: `${size}px`, backgroundColor: colors[Math.floor(Math.random() * colors.length)], borderRadius: isSquare ? '2px' : '50%', transform: `rotate(${Math.random() * 360}deg)`, '--duration': `${Math.random() * 5 + 5}s`, '--delay': `${Math.random() * 5}s` }; }); }, []); return (<div className="w-full h-full absolute top-0 left-0 overflow-hidden">{confettiPieces.map(style => <div key={style.key} className="confetti" style={style} />)}</div>); };
+        const BackgroundSnow = ({ isChristmas }) => { if (!isChristmas) return null; const snowflakes = useMemo(() => Array.from({ length: 150 }).map((_, i) => { const size = Math.random() * 4 + 2; return { key: i, left: `${Math.random() * 100}vw`, width: `${size}px`, height: `${size}px`, '--duration': `${Math.random() * 10 + 10}s`, '--delay': `${Math.random() * 10}s`, '--drift': Math.random() - 0.5 }; }), []); return (<div className="w-full h-full absolute top-0 left-0 overflow-hidden">{snowflakes.map(style => <div key={style.key} className="snowflake" style={style} />)}</div>); };
+        const BackgroundChristmasLights = ({ isChristmas }) => { if (!isChristmas) return null; const lights = useMemo(() => { const colors = ['#f44336', '#4caf50', '#2196f3', '#ffeb3b']; return Array.from({ length: 40 }).map((_, i) => { const size = Math.random() * 10 + 5; return { key: i, top: `${Math.random() * 100}vh`, left: `${Math.random() * 100}vw`, width: `${size}px`, height: `${size}px`, backgroundColor: colors[i % colors.length], boxShadow: `0 0 15px 5px ${colors[i % colors.length]}66`, '--duration': `${Math.random() * 2 + 1.5}s`, animationDelay: `${Math.random() * 2}s` }; }); }, []); return (<div className="w-full h-full absolute top-0 left-0">{lights.map(style => <div key={style.key} className="christmas-light" style={style} />)}</div>); };
+        const BackgroundGhost = ({ isHalloween }) => { if (!isHalloween) return null; const ghosts = useMemo(() => Array.from({ length: 5 }).map((_, i) => ({ key: i, '--duration': `${Math.random() * 15 + 10}s`, '--delay': `${Math.random() * 10}s`, '--start-x': `${Math.random() * 80 + 10}vw`, '--end-x': `${Math.random() * 80 + 10}vw`, width: `${Math.random() * 50 + 50}px` })), []); return (<div className="w-full h-full absolute top-0 left-0 overflow-hidden">{ghosts.map(style => (<svg key={style.key} className="ghost" style={style} viewBox="0 0 100 125"><path d="M10 115 C 10 115, 10 95, 20 95 C 30 95, 30 115, 30 115 C 30 115, 30 95, 40 95 C 50 95, 50 115, 50 115 C 50 115, 50 95, 60 95 C 70 95, 70 115, 70 115 C 70 115, 70 95, 80 95 C 90 95, 90 115, 90 115 L 90 60 C 90 20, 50 10, 50 10 C 50 10, 10 20, 10 60 Z M 30 60 C 35 60, 35 50, 30 50 C 25 50, 25 60, 30 60 Z M 70 60 C 75 60, 75 50, 70 50 C 65 50, 65 60, 70 60 Z" /></svg>))}</div>); };
+        const BackgroundMagic = ({ isBiancaBday }) => { if (!isBiancaBday) return null; const particles = useMemo(() => { const emojis = ['🦄', '🐱', '✨', '💜', '❤️', '💖']; return Array.from({ length: 100 }).map((_, i) => { return { key: i, left: `${Math.random() * 100}vw`, fontSize: `${Math.random() * 1.5 + 0.75}rem`, opacity: Math.random() * 0.5 + 0.5, emoji: emojis[i % emojis.length], '--duration': `${Math.random() * 10 + 8}s`, '--delay': `${Math.random() * 8}s` }; }); }, []); return (<div className="w-full h-full absolute top-0 left-0 overflow-hidden">{particles.map(style => <div key={style.key} className="magic-particle" style={style}>{style.emoji}</div>)}</div>); };
+        const SpiderWeb = ({ isHalloween }) => { if (!isHalloween) return null; return (<><div className="spider-web"><div className="line1"></div><div className="line2"></div></div><div className="spider-web" style={{ left: 'auto', right: 0, transform: 'scaleX(-1)' }}><div className="line1"></div><div className="line2"></div></div></>); };
 
         const Title = ({ themeClasses, celebration }) => { 
             const shadowStyle = celebration.theme === 'halloween' ? '[text-shadow:0_0_8px_rgba(255,165,0,0.6)]' : celebration.theme === 'party' ? '[text-shadow:0_0_10px_rgba(217,70,239,0.7)]' : celebration.theme === 'biancaBday' ? '[text-shadow:0_0_12px_rgba(236,72,153,0.6)]' : '';
@@ -615,7 +585,6 @@
         };
         
         const TaskListItem = ({ task, toggleTimer, deleteTask, updateTaskDetails, themeClasses, resetTaskTimer, celebrationTheme }) => {
-            // ... (TaskListItem code kept exactly the same) ...
             const [isEditingTime, setIsEditingTime] = useState(false); 
             const [editedTime, setEditedTime] = useState(formatTime(task.elapsedTime)); 
             const [isEditingQuantity, setIsEditingQuantity] = useState(false); 
@@ -686,57 +655,20 @@
             );
         };
 
-        // NEW: Reusable Report Viewer Component with Copy Button
         const ReportViewer = ({ content, themeClasses, placeholder }) => {
             const [isCopied, setIsCopied] = useState(false);
-
             const handleCopy = () => {
                 if (!content) return;
-                
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(content).then(() => {
-                        setIsCopied(true);
-                        setTimeout(() => setIsCopied(false), 2000);
-                    });
-                } else {
-                    // Fallback
-                    const textArea = document.createElement("textarea");
-                    textArea.value = content;
-                    document.body.appendChild(textArea);
-                    textArea.select();
-                    try {
-                        document.execCommand('copy');
-                        setIsCopied(true);
-                        setTimeout(() => setIsCopied(false), 2000);
-                    } catch (err) {
-                        console.error('Fallback copy failed', err);
-                    }
-                    document.body.removeChild(textArea);
-                }
+                if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(content).then(() => { setIsCopied(true); setTimeout(() => setIsCopied(false), 2000); }); } else { const textArea = document.createElement("textarea"); textArea.value = content; document.body.appendChild(textArea); textArea.select(); try { document.execCommand('copy'); setIsCopied(true); setTimeout(() => setIsCopied(false), 2000); } catch (err) { console.error('Fallback copy failed', err); } document.body.removeChild(textArea); }
             };
-
             return (
                 <div className="relative w-full group">
                     <div className={`w-full p-5 rounded-xl font-mono text-sm whitespace-pre-wrap transition-colors duration-500 ${themeClasses.itemBg} ${themeClasses.secondaryText} min-h-[100px]`}>
                         {content || <p className="text-center opacity-70 italic pt-8">{placeholder}</p>}
                     </div>
                     {content && (
-                        <button 
-                            onClick={handleCopy} 
-                            className={`absolute top-2 right-2 px-3 py-1 text-xs font-bold rounded transition-all duration-200 shadow-md flex items-center gap-1 ${isCopied ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}`}
-                            title="Copiar reporte"
-                        >
-                            {isCopied ? (
-                                <>
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                                    ¡Copiado!
-                                </>
-                            ) : (
-                                <>
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
-                                    Copiar
-                                </>
-                            )}
+                        <button onClick={handleCopy} className={`absolute top-2 right-2 px-3 py-1 text-xs font-bold rounded transition-all duration-200 shadow-md flex items-center gap-1 ${isCopied ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}`} title="Copiar reporte">
+                            {isCopied ? ( <><svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>¡Copiado!</> ) : ( <><svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>Copiar</> )}
                         </button>
                     )}
                 </div>
@@ -744,7 +676,6 @@
         };
 
         const CalendarWidget = ({ reports, selectedDate, onSelectDate, themeClasses }) => {
-            // ... (CalendarWidget code kept exactly the same) ...
             const [viewDate, setViewDate] = useState(new Date());
             const daysInMonth = useMemo(() => { const year = viewDate.getFullYear(); const month = viewDate.getMonth(); return new Date(year, month + 1, 0).getDate(); }, [viewDate]);
             const startDay = useMemo(() => { const year = viewDate.getFullYear(); const month = viewDate.getMonth(); return new Date(year, month, 1).getDay(); }, [viewDate]);
@@ -777,7 +708,44 @@
             );
         };
         
-        // --- MODIFICADO: Formulario Inteligente (Filtro Dinámico) ---
+        const MultiSelectCalendar = ({ reports, selectedDates, onToggleDate, themeClasses }) => {
+            const [viewDate, setViewDate] = useState(new Date());
+            const daysInMonth = useMemo(() => { const year = viewDate.getFullYear(); const month = viewDate.getMonth(); return new Date(year, month + 1, 0).getDate(); }, [viewDate]);
+            const startDay = useMemo(() => { const year = viewDate.getFullYear(); const month = viewDate.getMonth(); return new Date(year, month, 1).getDay(); }, [viewDate]);
+            const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+            const weekDays = ["D", "L", "M", "M", "J", "V", "S"];
+            const handlePrevMonth = () => { setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1)); };
+            const handleNextMonth = () => { setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1)); };
+            const generateCalendarDays = () => {
+                const days = [];
+                for (let i = 0; i < startDay; i++) { days.push(<div key={`empty-${i}`} className="h-10 w-10"></div>); }
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const dateObj = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
+                    const dateString = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+                    const isSelected = selectedDates.includes(dateString);
+                    const hasReport = reports.some(r => r.id === dateString);
+                    let bgClass = "hover:bg-gray-600/50";
+                    let textClass = themeClasses.secondaryText;
+                    
+                    if (isSelected) { 
+                        bgClass = 'bg-green-600 text-white font-bold border border-green-400'; 
+                        textClass = "text-white"; 
+                    } 
+                    
+                    days.push( <div key={day} onClick={() => onToggleDate(dateString)} className={`h-10 w-10 flex flex-col items-center justify-center rounded-full cursor-pointer transition-all relative ${bgClass} ${textClass}`}> <span className="text-sm z-10">{day}</span> {hasReport && ( <div className={`absolute bottom-1 w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : (themeClasses.calendarDot || 'bg-yellow-400')}`}></div> )} </div> );
+                }
+                return days;
+            };
+            
+            return (
+                <div className={`p-4 rounded-xl shadow-lg border transition-colors duration-500 ${themeClasses.cardBg} ${themeClasses.inputBorder}`}>
+                    <div className="flex justify-between items-center mb-4"> <button onClick={handlePrevMonth} className={`p-1 rounded-full hover:bg-gray-600/50 ${themeClasses.primaryText}`}>&lt;</button> <span className={`font-bold text-lg ${themeClasses.primaryText}`}>{monthNames[viewDate.getMonth()]} {viewDate.getFullYear()}</span> <button onClick={handleNextMonth} className={`p-1 rounded-full hover:bg-gray-600/50 ${themeClasses.primaryText}`}>&gt;</button> </div>
+                    <div className="grid grid-cols-7 gap-1 text-center mb-2"> {weekDays.map(d => (<div key={d} className={`text-xs font-bold opacity-70 ${themeClasses.secondaryText}`}>{d}</div>))} </div>
+                    <div className="grid grid-cols-7 gap-1 justify-items-center"> {generateCalendarDays()} </div>
+                </div>
+            );
+        };
+        
         const TaskInputForm = ({ addTask, errorMessage, setErrorMessage, themeClasses }) => {
             const [shopInput, setShopInput] = useState(''); 
             const [taskInput, setTaskInput] = useState(''); 
@@ -785,21 +753,11 @@
             const [orderQuantity, setOrderQuantity] = useState(''); 
             const [isCustomTask, setIsCustomTask] = useState(false); 
             
-            // Efecto: Cuando cambia la tienda, reseteamos la tarea para evitar conflictos
-            useEffect(() => {
-                setTaskInput('');
-            }, [shopInput]);
+            useEffect(() => { setTaskInput(''); }, [shopInput]);
 
-            // Lógica de filtrado dinámico
             const availableTasks = useMemo(() => {
                 let options = [...commonTaskOptions];
-                
-                // Solo si hay una tienda seleccionada, agregamos su tarea específica
-                if (shopInput && shopSpecificCallTasks[shopInput]) {
-                    // La agregamos al principio para que sea fácil de encontrar
-                    options = [shopSpecificCallTasks[shopInput], ...options];
-                }
-                
+                if (shopInput && shopSpecificCallTasks[shopInput]) { options = [shopSpecificCallTasks[shopInput], ...options]; }
                 return options;
             }, [shopInput]);
 
@@ -813,16 +771,8 @@
                     <div className="flex flex-col gap-2 w-full">
                         <select value={shopInput} onChange={handleShopChange} className={`flex-1 px-5 py-3 border-2 ${themeClasses.cardBg} ${themeClasses.accentText} ${themeClasses.shopSelectBorder} rounded-full focus:outline-none transition-all font-semibold`} required> <option value="" disabled className={optionClasses}>--- Seleccionar Tienda ---</option> {shopOptions.map(o => <option key={o} value={o} className={optionClasses}>{o}</option>)} </select>
                         {!isCustomTask && ( 
-                            <select 
-                                value={taskInput} 
-                                onChange={handleTaskChange} 
-                                className={`flex-1 px-5 py-3 border-2 ${themeClasses.cardBg} ${themeClasses.secondaryText} ${themeClasses.inputBorder} rounded-full focus:outline-none transition-all ${!shopInput ? 'opacity-50 cursor-not-allowed' : ''}`} 
-                                disabled={!shopInput} // Deshabilitar si no hay tienda
-                                required
-                            > 
-                                <option value="" disabled className={optionClasses}>
-                                    {shopInput ? "Seleccionar tarea" : "Primero selecciona una tienda"}
-                                </option> 
+                            <select value={taskInput} onChange={handleTaskChange} className={`flex-1 px-5 py-3 border-2 ${themeClasses.cardBg} ${themeClasses.secondaryText} ${themeClasses.inputBorder} rounded-full focus:outline-none transition-all ${!shopInput ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={!shopInput} required> 
+                                <option value="" disabled className={optionClasses}>{shopInput ? "Seleccionar tarea" : "Primero selecciona una tienda"}</option> 
                                 {availableTasks.map(o => <option key={o} value={o} className={optionClasses}>{o}</option>)} 
                                 <option value="OTHER_CUSTOM_TASK" className={optionClasses}>Otra</option> 
                             </select> 
@@ -837,160 +787,222 @@
             );
         };
 
-        // MODIFIED SYNC TOOL (To be used inside Modal)
         const SyncTool = ({ tasks, syncTasksTime, themeClasses }) => {
             const [targetTimeStr, setTargetTimeStr] = useState('');
             const [selectedSyncTaskId, setSelectedSyncTaskId] = useState('');
-            const [distributionMode, setDistributionMode] = useState('single'); // 'single' or 'all'
-
-            const totalAppMs = tasks.reduce((acc, t) => {
-                return acc + (t.running ? t.elapsedTime + (Date.now() - (t.lastTime || Date.now())) : t.elapsedTime);
-            }, 0);
-
+            const [distributionMode, setDistributionMode] = useState('single'); 
+            const totalAppMs = tasks.reduce((acc, t) => acc + (t.running ? t.elapsedTime + (Date.now() - (t.lastTime || Date.now())) : t.elapsedTime), 0);
             const targetMs = parseTimeStringToMs(targetTimeStr);
             let diffMs = targetMs - totalAppMs;
-            
-            // LOGIC FIX: Ignore differences smaller than 1 second (1000ms) to show 00:00:00
             if (Math.abs(diffMs) < 1000) diffMs = 0;
-
             const diffSign = diffMs >= 0 ? '+' : '-';
             const diffAbs = Math.abs(diffMs);
             const diffStr = formatTime(diffAbs);
             const isSynced = diffMs === 0 && targetTimeStr !== '';
 
-            useEffect(() => {
-                if (!selectedSyncTaskId && tasks.length > 0) {
-                    const running = tasks.find(t => t.running);
-                    if (running) setSelectedSyncTaskId(running.id);
-                    else setSelectedSyncTaskId(tasks[tasks.length - 1].id);
-                }
-            }, [tasks, selectedSyncTaskId]);
-
-            const handleSync = () => {
-                syncTasksTime(diffMs, distributionMode, selectedSyncTaskId);
-                // setTargetTimeStr(''); // Optional: Keep value to show instant sync
-            };
+            useEffect(() => { if (!selectedSyncTaskId && tasks.length > 0) { const running = tasks.find(t => t.running); if (running) setSelectedSyncTaskId(running.id); else setSelectedSyncTaskId(tasks[tasks.length - 1].id); } }, [tasks, selectedSyncTaskId]);
+            const handleSync = () => { syncTasksTime(diffMs, distributionMode, selectedSyncTaskId); };
 
             return (
                 <div className={`w-full flex flex-col gap-3`}>
                     <h3 className={`font-bold text-sm text-center uppercase tracking-wide opacity-90 ${themeClasses.primaryText}`}>Sincronizador de Tiempo</h3>
-                    
                     <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div className="flex flex-col">
-                            <span className={`text-xs opacity-70 ${themeClasses.secondaryText}`}>Total en App:</span>
-                            <span className={`font-mono font-bold text-lg ${themeClasses.primaryText}`}>{formatTime(totalAppMs)}</span>
-                        </div>
-                        <div className="flex flex-col">
-                            <label className={`text-xs opacity-70 ${themeClasses.secondaryText} mb-1`}>Timer Hubstaff (HH:MM):</label>
-                            <input 
-                                type="text" 
-                                value={targetTimeStr} 
-                                onChange={(e) => setTargetTimeStr(e.target.value)}
-                                placeholder="ej. 05:30"
-                                className={`px-2 py-1 rounded bg-gray-900 border ${themeClasses.inputBorder} ${themeClasses.primaryText} focus:outline-none font-mono`}
-                            />
-                        </div>
+                        <div className="flex flex-col"> <span className={`text-xs opacity-70 ${themeClasses.secondaryText}`}>Total en App:</span> <span className={`font-mono font-bold text-lg ${themeClasses.primaryText}`}>{formatTime(totalAppMs)}</span> </div>
+                        <div className="flex flex-col"> <label className={`text-xs opacity-70 ${themeClasses.secondaryText} mb-1`}>Timer Hubstaff (HH:MM):</label> <input type="text" value={targetTimeStr} onChange={(e) => setTargetTimeStr(e.target.value)} placeholder="ej. 05:30" className={`px-2 py-1 rounded bg-gray-900 border ${themeClasses.inputBorder} ${themeClasses.primaryText} focus:outline-none font-mono`} /> </div>
                     </div>
-
-                    {/* VISUAL FEEDBACK AREA */}
                     {targetTimeStr && (
                         <div className={`transition-all duration-500 rounded-xl p-3 border-2 mt-2 ${isSynced ? 'bg-green-900/40 border-green-500' : 'bg-red-900/20 border-red-500'}`}>
-                            
-                            {/* ESTADO SINCRONIZADO (CAJA VERDE) */}
-                            {isSynced ? (
-                                <div className="flex flex-col items-center text-center animate-pulse py-1">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <div className="bg-green-500 text-white rounded-full p-1 shadow-lg">
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-                                        </div>
-                                        <span className="text-green-400 font-bold text-lg">¡Sincronizado!</span>
-                                    </div>
-                                    <p className="text-green-200 text-xs opacity-80">Los tiempos coinciden. Todo listo.</p>
-                                </div>
-                            ) : (
-                                /* ESTADO ERROR (CAJA ROJA + CONTROLES) */
-                                <>
-                                    <div className="flex items-center justify-between mb-2">
-                                        <span className={`text-xs font-bold ${themeClasses.secondaryText}`}>Diferencia:</span>
-                                        <span className={`font-mono font-bold ${diffMs >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                            {diffSign}{diffStr}
-                                        </span>
-                                    </div>
-
-                                    <div className="flex flex-col gap-2">
-                                        <div className="flex gap-2">
-                                            <button onClick={() => setDistributionMode('single')} className={`flex-1 py-1 text-xs rounded border ${distributionMode === 'single' ? 'bg-blue-600 border-blue-500 text-white' : 'bg-transparent border-gray-600 text-gray-400'}`}>Una Tarea</button>
-                                            <button onClick={() => setDistributionMode('all')} className={`flex-1 py-1 text-xs rounded border ${distributionMode === 'all' ? 'bg-purple-600 border-purple-500 text-white' : 'bg-transparent border-gray-600 text-gray-400'}`}>Todas</button>
-                                        </div>
-
-                                        {distributionMode === 'single' ? (
-                                            <select value={selectedSyncTaskId} onChange={(e) => setSelectedSyncTaskId(e.target.value)} className={`mt-1 px-2 py-2 rounded bg-gray-900 border ${themeClasses.inputBorder} ${themeClasses.secondaryText} focus:outline-none text-sm w-full`}>
-                                                {tasks.map(t => <option key={t.id} value={t.id}>{t.rawTaskName} [{t.shop}]</option>)}
-                                            </select>
-                                        ) : (
-                                            <p className="text-[10px] text-center text-gray-400 mt-1 italic">Se repartirán {diffSign}{Math.floor(Math.abs(diffMs) / 1000 / 60)} min uniformemente.</p>
-                                        )}
-                                    </div>
-
-                                    <button onClick={handleSync} className={`mt-2 w-full px-4 py-2 rounded-lg font-bold text-white text-sm transition-colors shadow-md ${diffMs > 0 ? 'bg-blue-600 hover:bg-blue-700' : 'bg-orange-600 hover:bg-orange-700'}`}>
-                                        {diffMs > 0 ? 'Añadir Tiempo' : 'Restar Tiempo'}
-                                    </button>
-                                </>
-                            )}
+                            {isSynced ? ( <div className="flex flex-col items-center text-center animate-pulse py-1"> <div className="flex items-center gap-2 mb-1"> <div className="bg-green-500 text-white rounded-full p-1 shadow-lg"> <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg> </div> <span className="text-green-400 font-bold text-lg">¡Sincronizado!</span> </div> <p className="text-green-200 text-xs opacity-80">Los tiempos coinciden. Todo listo.</p> </div> ) : ( <> <div className="flex items-center justify-between mb-2"> <span className={`text-xs font-bold ${themeClasses.secondaryText}`}>Diferencia:</span> <span className={`font-mono font-bold ${diffMs >= 0 ? 'text-green-400' : 'text-red-400'}`}> {diffSign}{diffStr} </span> </div> <div className="flex flex-col gap-2"> <div className="flex gap-2"> <button onClick={() => setDistributionMode('single')} className={`flex-1 py-1 text-xs rounded border ${distributionMode === 'single' ? 'bg-blue-600 border-blue-500 text-white' : 'bg-transparent border-gray-600 text-gray-400'}`}>Una Tarea</button> <button onClick={() => setDistributionMode('all')} className={`flex-1 py-1 text-xs rounded border ${distributionMode === 'all' ? 'bg-purple-600 border-purple-500 text-white' : 'bg-transparent border-gray-600 text-gray-400'}`}>Todas</button> </div> {distributionMode === 'single' ? ( <select value={selectedSyncTaskId} onChange={(e) => setSelectedSyncTaskId(e.target.value)} className={`mt-1 px-2 py-2 rounded bg-gray-900 border ${themeClasses.inputBorder} ${themeClasses.secondaryText} focus:outline-none text-sm w-full`}> {tasks.map(t => <option key={t.id} value={t.id}>{t.rawTaskName} [{t.shop}]</option>)} </select> ) : ( <p className="text-[10px] text-center text-gray-400 mt-1 italic">Se repartirán {diffSign}{Math.floor(Math.abs(diffMs) / 1000 / 60)} min uniformemente.</p> )} </div> <button onClick={handleSync} className={`mt-2 w-full px-4 py-2 rounded-lg font-bold text-white text-sm transition-colors shadow-md ${diffMs > 0 ? 'bg-blue-600 hover:bg-blue-700' : 'bg-orange-600 hover:bg-orange-700'}`}> {diffMs > 0 ? 'Añadir Tiempo' : 'Restar Tiempo'} </button> </> )}
                         </div>
                     )}
                 </div>
             );
         };
 
-        // NEW: Report Config Modal
         const ReportConfigModal = ({ isOpen, onClose, onGenerate, tasks, syncTasksTime, themeClasses, selectedReportDate, setSelectedReportDate }) => {
             if (!isOpen) return null;
-
             return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
                     <div className={`relative w-full max-w-md p-6 rounded-2xl shadow-2xl ${themeClasses.modalBg || 'bg-gray-800 border-gray-600'} border-2 modal-content max-h-[90vh] overflow-y-auto`}>
                         <h2 className={`text-xl font-bold mb-4 text-center ${themeClasses.primaryText}`}>Preparar Reporte</h2>
-                        
-                        {/* Date Selector */}
-                        <div className="mb-6">
-                            <label className={`block text-sm font-semibold mb-2 ${themeClasses.secondaryText}`}>Fecha del Reporte:</label>
-                            <input 
-                                type="date" 
-                                value={selectedReportDate} 
-                                onChange={(e) => setSelectedReportDate(e.target.value)}
-                                className={`w-full px-3 py-2 rounded bg-gray-900 border ${themeClasses.inputBorder} ${themeClasses.primaryText} focus:outline-none`}
-                            />
-                            <p className="text-[10px] text-gray-500 mt-1">*Ajusta la fecha si ya pasaste la medianoche.</p>
-                        </div>
-
+                        <div className="mb-6"> <label className={`block text-sm font-semibold mb-2 ${themeClasses.secondaryText}`}>Fecha del Reporte:</label> <input type="date" value={selectedReportDate} onChange={(e) => setSelectedReportDate(e.target.value)} className={`w-full px-3 py-2 rounded bg-gray-900 border ${themeClasses.inputBorder} ${themeClasses.primaryText} focus:outline-none`} /> <p className="text-[10px] text-gray-500 mt-1">*Ajusta la fecha si ya pasaste la medianoche.</p> </div>
                         <hr className={`border-t ${themeClasses.inputBorder} mb-6 opacity-50`} />
-
-                        {/* Sync Tool */}
-                        <div className="mb-6">
-                            <SyncTool tasks={tasks} syncTasksTime={syncTasksTime} themeClasses={themeClasses} />
-                        </div>
-
-                        <div className="flex gap-3 mt-4">
-                            <button 
-                                onClick={onGenerate}
-                                className={`flex-1 py-3 rounded-full font-bold text-white shadow-lg ${themeClasses.buttonAction}`}
-                            >
-                                Confirmar y Generar
-                            </button>
-                            <button 
-                                onClick={onClose}
-                                className="px-6 py-3 rounded-full font-bold text-gray-300 bg-gray-700 hover:bg-gray-600 transition-colors"
-                            >
-                                Cancelar
-                            </button>
-                        </div>
+                        <div className="mb-6"> <SyncTool tasks={tasks} syncTasksTime={syncTasksTime} themeClasses={themeClasses} /> </div>
+                        <div className="flex gap-3 mt-4"> <button onClick={onGenerate} className={`flex-1 py-3 rounded-full font-bold text-white shadow-lg ${themeClasses.buttonAction}`}> Confirmar y Generar </button> <button onClick={onClose} className="px-6 py-3 rounded-full font-bold text-gray-300 bg-gray-700 hover:bg-gray-600 transition-colors"> Cancelar </button> </div>
                     </div>
                 </div>
             );
         };
 
-        // --- SECTION: MAIN APP COMPONENT ---
+        const SalaryCalculatorModal = ({ isOpen, onClose, pastReports, hourlyRate, setHourlyRate, themeClasses }) => {
+            if (!isOpen) return null;
+            
+            const [selectedSalaryDates, setSelectedSalaryDates] = useState([]);
+
+            const toggleDate = (date) => {
+                if (selectedSalaryDates.includes(date)) {
+                    setSelectedSalaryDates(prev => prev.filter(d => d !== date));
+                } else {
+                    setSelectedSalaryDates(prev => [...prev, date]);
+                }
+            };
+
+            const stats = useMemo(() => {
+                let totalHours = 0;
+                let daysCount = 0;
+                
+                selectedSalaryDates.forEach(date => {
+                    const report = pastReports.find(r => r.id === date);
+                    if (report) {
+                        const hours = parseHoursFromReport(report.content);
+                        if (hours > 0) {
+                            totalHours += hours;
+                            daysCount++;
+                        }
+                    }
+                });
+                
+                const totalEarnings = totalHours * (parseFloat(hourlyRate) || 0);
+                return { totalHours, daysCount, totalEarnings };
+            }, [selectedSalaryDates, pastReports, hourlyRate]);
+
+            const handleExportExcel = () => {
+                if (selectedSalaryDates.length === 0) {
+                    alert("Selecciona al menos un día para exportar.");
+                    return;
+                }
+
+                if (typeof XLSX === 'undefined') {
+                    alert("Error: La librería de Excel no se cargó correctamente. Verifica tu conexión.");
+                    return;
+                }
+
+                const rate = parseFloat(hourlyRate) || 0;
+                
+                const data = [
+                    ["Fecha", "Horas Trabajadas", "Tarifa por Hora ($)", "Total ($)"]
+                ];
+
+                const sortedDates = [...selectedSalaryDates].sort();
+
+                sortedDates.forEach(date => {
+                    const report = pastReports.find(r => r.id === date);
+                    let hours = 0;
+                    if (report) hours = parseHoursFromReport(report.content);
+                    const earning = hours * rate;
+                    
+                    data.push([
+                        date, 
+                        hours, 
+                        rate, 
+                        earning
+                    ]);
+                });
+
+                data.push([]); 
+                data.push(["TOTALES", stats.totalHours, "", stats.totalEarnings]);
+
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.aoa_to_sheet(data);
+
+                const wscols = [
+                    {wch: 15}, 
+                    {wch: 20}, 
+                    {wch: 20}, 
+                    {wch: 20}
+                ];
+                ws['!cols'] = wscols;
+
+                XLSX.utils.book_append_sheet(wb, ws, "Reporte Salarial");
+                XLSX.writeFile(wb, `Reporte_Salario_${getTodayID()}.xlsx`);
+            };
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                    <div className={`relative w-full max-w-lg p-6 rounded-2xl shadow-2xl border-2 modal-content max-h-[90vh] overflow-y-auto ${themeClasses.modalBg}`}>
+                        <div className="flex justify-between items-center mb-4">
+                            {/* UPDATED TITLE: Gradient Money Style */}
+                            <h2 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 flex items-center gap-2">
+                                <span className="text-3xl">💰</span> Calculadora Salarial
+                            </h2>
+                            <button onClick={onClose} className={`text-gray-400 hover:${themeClasses.primaryText}`}>✕</button>
+                        </div>
+
+                        <div className={`mb-6 p-4 rounded-xl border ${themeClasses.itemBg} ${themeClasses.inputBorder}`}>
+                            <label className={`block text-sm font-semibold mb-2 ${themeClasses.secondaryText}`}>Tu Tarifa por Hora ($):</label>
+                            <input 
+                                type="number" 
+                                value={hourlyRate} 
+                                onChange={(e) => setHourlyRate(e.target.value)}
+                                className={`w-full px-4 py-3 rounded-lg bg-gray-900 border text-xl font-mono focus:outline-none focus:ring-2 ${themeClasses.inputBorder} ${themeClasses.primaryText}`}
+                                placeholder="Ej: 5.50"
+                            />
+                        </div>
+
+                        <div className="mb-6">
+                            <p className={`text-sm mb-2 ${themeClasses.secondaryText}`}>Selecciona los días a liquidar:</p>
+                            <MultiSelectCalendar 
+                                reports={pastReports} 
+                                selectedDates={selectedSalaryDates} 
+                                onToggleDate={toggleDate} 
+                                themeClasses={themeClasses}
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                            <div className={`p-4 rounded-xl border flex flex-col items-center ${themeClasses.itemBg} ${themeClasses.inputBorder}`}>
+                                <span className={`text-xs uppercase tracking-wide ${themeClasses.secondaryText}`}>Horas Totales</span>
+                                <span className={`text-2xl font-bold mt-1 ${themeClasses.primaryText}`}>{stats.totalHours.toFixed(2)}h</span>
+                                <span className={`text-xs opacity-70 ${themeClasses.secondaryText}`}>en {stats.daysCount} días</span>
+                            </div>
+                            <div className="bg-green-900/40 p-4 rounded-xl border border-green-500 flex flex-col items-center justify-center relative overflow-hidden">
+                                <div className="absolute top-0 right-0 p-1 opacity-20"><span className="text-4xl">💰</span></div>
+                                <span className="text-green-300 text-xs uppercase tracking-wide font-bold">Total a Cobrar</span>
+                                <span className="text-3xl font-extrabold text-green-400 mt-1">${stats.totalEarnings.toFixed(2)}</span>
+                            </div>
+                        </div>
+
+                        <button 
+                            onClick={handleExportExcel}
+                            className={`w-full py-3 rounded-xl font-bold text-white shadow-lg flex items-center justify-center gap-2 transition-transform active:scale-95 bg-green-700 hover:bg-green-600`}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                            Exportar a Excel
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        const FloatingSalaryButton = ({ onClick }) => {
+            const [showBadge, setShowBadge] = useState(true);
+
+            useEffect(() => {
+                const timer = setTimeout(() => setShowBadge(false), 10000); 
+                return () => clearTimeout(timer);
+            }, []);
+
+            return (
+                <div className="fixed bottom-4 left-4 sm:bottom-6 sm:left-6 z-50 group">
+                    {showBadge && (
+                        <div className="absolute -top-3 -right-4 bg-red-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-lg wiggle-animation z-50 border-2 border-white tracking-widest transition-opacity duration-1000">
+                            ¡NUEVO!
+                        </div>
+                    )}
+                    
+                    <button 
+                        onClick={onClick}
+                        className="relative w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-green-600 hover:bg-green-500 text-white shadow-2xl flex items-center justify-center border-4 border-gray-900 transition-transform duration-300 active:scale-95 hover:scale-110 overflow-hidden"
+                        title="Calcular Salario"
+                    >
+                        <div className="shine-bar"></div>
+                        <span className="text-xl sm:text-3xl font-bold relative z-10">$</span>
+                    </button>
+                </div>
+            );
+        };
 
         const App = () => {
             const { celebration, themeClasses } = useCelebration(birthdaysList);
@@ -999,9 +1011,11 @@
             const [reportOutput, setReportOutput] = useState('');
             const [calendarSelectedDate, setCalendarSelectedDate] = useState(getTodayID());
             
-            // Report Config State
             const [isReportModalOpen, setIsReportModalOpen] = useState(false);
             const [selectedReportDate, setSelectedReportDate] = useState(getTodayID());
+
+            const [isSalaryModalOpen, setIsSalaryModalOpen] = useState(false);
+            const [hourlyRate, setHourlyRate] = usePersistentState('hourlyRate', '');
 
             useEffect(() => { 
                 document.getElementById('root').style.zIndex = '10'; 
@@ -1015,10 +1029,7 @@
                 }
             }, [statusMessage, clearStatusMessage]);
             
-            const handleGenerateReportClick = () => {
-                // Open Modal instead of generating immediately
-                setIsReportModalOpen(true);
-            };
+            const handleGenerateReportClick = () => { setIsReportModalOpen(true); };
 
             const confirmGenerateReport = () => {
                 const reportContent = generateEODRContent(tasks, selectedReportDate);
@@ -1031,7 +1042,7 @@
                     return [...prev, newReport].sort((a, b) => b.id.localeCompare(a.id));
                 });
                 setCalendarSelectedDate(reportDocId);
-                setIsReportModalOpen(false); // Close modal
+                setIsReportModalOpen(false); 
             };
 
             const cardGlowClass = celebration.theme === 'halloween' ? 'glow-card' : (celebration.theme === 'party' || celebration.theme === 'biancaBday') ? 'party-glow-card' : '';
@@ -1045,16 +1056,11 @@
                 <>
                     <GlobalStatusMessage message={statusMessage} resumeAction={resumeStoppedTimers} dismissAction={clearStatusMessage} />
                     
-                    <ReportConfigModal 
-                        isOpen={isReportModalOpen}
-                        onClose={() => setIsReportModalOpen(false)}
-                        onGenerate={confirmGenerateReport}
-                        tasks={tasks}
-                        syncTasksTime={syncTasksTime}
-                        themeClasses={themeClasses}
-                        selectedReportDate={selectedReportDate}
-                        setSelectedReportDate={setSelectedReportDate}
-                    />
+                    <ReportConfigModal isOpen={isReportModalOpen} onClose={() => setIsReportModalOpen(false)} onGenerate={confirmGenerateReport} tasks={tasks} syncTasksTime={syncTasksTime} themeClasses={themeClasses} selectedReportDate={selectedReportDate} setSelectedReportDate={setSelectedReportDate} />
+                    
+                    <SalaryCalculatorModal isOpen={isSalaryModalOpen} onClose={() => setIsSalaryModalOpen(false)} pastReports={pastReports} hourlyRate={hourlyRate} setHourlyRate={setHourlyRate} themeClasses={themeClasses} />
+                    
+                    <FloatingSalaryButton onClick={() => setIsSalaryModalOpen(true)} />
 
                     <div className={`max-w-xl w-11/12 mx-auto rounded-2xl shadow-xl p-8 pt-12 transition-colors duration-500 ${themeClasses.cardBg} max-h-[95vh] overflow-y-auto hide-scrollbar relative ${cardGlowClass}`}>
                         <SpiderWeb isHalloween={celebration.theme === 'halloween'} />
@@ -1072,7 +1078,6 @@
                                     )}
                                 </div>
 
-                                {/* SCROLLABLE TASK LIST */}
                                 <div className="max-h-[35vh] overflow-y-auto task-scroll pr-2 space-y-3">
                                     {tasks.length > 0 ? tasks.map((task) => (
                                         <TaskListItem key={task.id} task={task} toggleTimer={toggleTimer} deleteTask={deleteTask} updateTaskDetails={updateTaskDetails} themeClasses={themeClasses} resetTaskTimer={resetTaskTimer} celebrationTheme={celebration.theme} />
