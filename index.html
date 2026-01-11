@@ -255,7 +255,7 @@
             "Columna POR UPSELL", 
             "Columna DATOS ENTREGA", 
             "Columna RESPONDER", 
-            "Columna REMINDER",
+            "Columna REMINDER", 
             "Columna LATE VERIFICATION",
             "Chat en vivo (filtro Abiertos)", 
             "Chat en vivo (filtro Pendiente)", 
@@ -717,26 +717,22 @@
             const handlePrevMonth = () => { setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1)); };
             const handleNextMonth = () => { setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1)); };
             
-            const handleSelectAll = () => {
-                const dates = [];
+            const getCurrentMonthDates = () => {
                 const year = viewDate.getFullYear();
-                const month = viewDate.getMonth() + 1;
-                const days = new Date(year, month, 0).getDate();
-                for (let d = 1; d <= days; d++) {
-                    dates.push(`${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`);
+                const month = viewDate.getMonth();
+                const dates = [];
+                for (let day = 1; day <= daysInMonth; day++) {
+                    dates.push(`${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`);
                 }
-                if(onBatchUpdate) onBatchUpdate(dates, 'add');
+                return dates;
+            };
+
+            const handleSelectAll = () => {
+                if (onBatchUpdate) onBatchUpdate(getCurrentMonthDates(), 'add');
             };
 
             const handleDeselectAll = () => {
-                const dates = [];
-                const year = viewDate.getFullYear();
-                const month = viewDate.getMonth() + 1;
-                const days = new Date(year, month, 0).getDate();
-                for (let d = 1; d <= days; d++) {
-                    dates.push(`${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`);
-                }
-                if(onBatchUpdate) onBatchUpdate(dates, 'remove');
+                if (onBatchUpdate) onBatchUpdate(getCurrentMonthDates(), 'remove');
             };
             
             const generateCalendarDays = () => {
@@ -762,11 +758,15 @@
             
             return (
                 <div className={`p-4 rounded-xl shadow-lg border transition-colors duration-500 ${themeClasses.cardBg} ${themeClasses.inputBorder}`}>
-                    <div className="flex justify-between items-center mb-2"> <button onClick={handlePrevMonth} className={`p-1 rounded-full hover:bg-gray-600/50 ${themeClasses.primaryText}`}>&lt;</button> <span className={`font-bold text-lg ${themeClasses.primaryText}`}>{monthNames[viewDate.getMonth()]} {viewDate.getFullYear()}</span> <button onClick={handleNextMonth} className={`p-1 rounded-full hover:bg-gray-600/50 ${themeClasses.primaryText}`}>&gt;</button> </div>
+                    <div className="flex justify-between items-center mb-4"> 
+                        <button onClick={handlePrevMonth} className={`p-1 rounded-full hover:bg-gray-600/50 ${themeClasses.primaryText}`}>&lt;</button> 
+                        <span className={`font-bold text-lg ${themeClasses.primaryText}`}>{monthNames[viewDate.getMonth()]} {viewDate.getFullYear()}</span> 
+                        <button onClick={handleNextMonth} className={`p-1 rounded-full hover:bg-gray-600/50 ${themeClasses.primaryText}`}>&gt;</button> 
+                    </div>
                     
-                    <div className="flex gap-2 justify-center mb-3">
-                        <button onClick={handleSelectAll} className="text-xs font-bold bg-green-600/80 hover:bg-green-600 text-white px-3 py-1 rounded-full transition shadow-sm">Todo el Mes</button>
-                        <button onClick={handleDeselectAll} className="text-xs font-bold bg-gray-600/80 hover:bg-gray-600 text-gray-200 px-3 py-1 rounded-full transition shadow-sm">Ninguno</button>
+                    <div className="flex gap-2 mb-3 justify-center">
+                        <button onClick={handleSelectAll} className="text-xs px-3 py-1 bg-green-700 hover:bg-green-600 text-white rounded-full transition">Todos</button>
+                        <button onClick={handleDeselectAll} className="text-xs px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-full transition">Ninguno</button>
                     </div>
 
                     <div className="grid grid-cols-7 gap-1 text-center mb-2"> {weekDays.map(d => (<div key={d} className={`text-xs font-bold opacity-70 ${themeClasses.secondaryText}`}>{d}</div>))} </div>
@@ -878,9 +878,12 @@
 
             const handleBatchUpdate = (dates, action) => {
                 if (action === 'add') {
-                     setSelectedSalaryDates(prev => Array.from(new Set([...prev, ...dates])));
-                } else {
-                     setSelectedSalaryDates(prev => prev.filter(d => !dates.includes(d)));
+                    setSelectedSalaryDates(prev => {
+                        const newSet = new Set([...prev, ...dates]);
+                        return Array.from(newSet);
+                    });
+                } else if (action === 'remove') {
+                    setSelectedSalaryDates(prev => prev.filter(d => !dates.includes(d)));
                 }
             };
 
@@ -902,6 +905,13 @@
                 const totalEarnings = totalHours * (parseFloat(hourlyRate) || 0);
                 return { totalHours, daysCount, totalEarnings };
             }, [selectedSalaryDates, pastReports, hourlyRate]);
+
+            const formatToHoursMinutes = (decimalHours) => {
+                let h = Math.floor(decimalHours);
+                let m = Math.round((decimalHours - h) * 60);
+                if (m === 60) { h++; m = 0; }
+                return `${h}h ${m}m`;
+            };
 
             const handleExportExcel = () => {
                 if (selectedSalaryDates.length === 0) {
@@ -958,7 +968,6 @@
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
                     <div className={`relative w-full max-w-lg p-6 rounded-2xl shadow-2xl border-2 modal-content max-h-[90vh] overflow-y-auto ${themeClasses.modalBg}`}>
                         <div className="flex justify-between items-center mb-4">
-                            {/* UPDATED TITLE: Gradient Money Style */}
                             <h2 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 flex items-center gap-2">
                                 <span className="text-3xl">💰</span> Calculadora Salarial
                             </h2>
@@ -990,7 +999,7 @@
                         <div className="grid grid-cols-2 gap-4 mb-2">
                             <div className={`p-4 rounded-xl border flex flex-col items-center ${themeClasses.itemBg} ${themeClasses.inputBorder}`}>
                                 <span className={`text-xs uppercase tracking-wide ${themeClasses.secondaryText}`}>Horas Totales</span>
-                                <span className={`text-2xl font-bold mt-1 ${themeClasses.primaryText}`}>{stats.totalHours.toFixed(2)}h</span>
+                                <span className={`text-2xl font-bold mt-1 ${themeClasses.primaryText}`}>{formatToHoursMinutes(stats.totalHours)}</span>
                                 <span className={`text-xs opacity-70 ${themeClasses.secondaryText}`}>en {stats.daysCount} días</span>
                             </div>
                             <div className="bg-green-900/40 p-4 rounded-xl border border-green-500 flex flex-col items-center justify-center relative overflow-hidden">
@@ -1006,7 +1015,7 @@
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             <p className="text-[11px] text-yellow-200/80 leading-tight">
-                                <strong>Nota:</strong> Diferencias de centavos son normales. Usalo para detectar errores grandes de dinero.
+                                <strong>Nota:</strong> Diferencias de centavos son normales. Úsalo para detectar errores grandes de dinero.
                             </p>
                         </div>
 
