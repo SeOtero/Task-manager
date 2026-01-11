@@ -438,6 +438,11 @@
             }, [tasks, setTasks]);
             
             const deleteTask = useCallback((id) => setTasks(prev => prev.filter(t => t.id !== id)), [setTasks]);
+
+            const deleteAllTasks = useCallback(() => {
+                setTasks([]);
+                setErrorMessage('');
+            }, [setTasks]);
             
             const toggleTimer = useCallback((id) => {
                 setTasks(prev => {
@@ -560,7 +565,7 @@
 
             const sortTasksByShop = useCallback(() => setTasks(prev => [...prev].sort((a, b) => a.shop.localeCompare(b.shop))), [setTasks]);
             
-            return { tasks, errorMessage, setErrorMessage, addTask, deleteTask, toggleTimer, updateTaskDetails, sortTasksByShop, resetTaskTimer, stopAllTimers, statusMessage, resumeStoppedTimers, clearStatusMessage, syncTasksTime };
+            return { tasks, errorMessage, setErrorMessage, addTask, deleteTask, deleteAllTasks, toggleTimer, updateTaskDetails, sortTasksByShop, resetTaskTimer, stopAllTimers, statusMessage, resumeStoppedTimers, clearStatusMessage, syncTasksTime };
         };
 
         // --- SECTION: UI COMPONENTS ---
@@ -671,7 +676,7 @@
             const bgColor = isSuccess ? 'bg-green-700/80' : 'bg-yellow-700/80';
             const borderColor = isSuccess ? 'border-green-400' : 'border-yellow-400';
             return (
-                <div className={`fixed top-0 left-0 w-full p-4 z-50 backdrop-blur-sm transition-all duration-300 transform translate-y-0`}>
+                <div className={`fixed top-0 left-0 w-full p-4 z-[60] backdrop-blur-sm transition-all duration-300 transform translate-y-0`}>
                     <div className={`max-w-xl mx-auto p-4 rounded-xl shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-3 ${bgColor} border ${borderColor} text-white`}>
                         <p className="font-semibold text-center sm:text-left flex-grow">{message.text}</p>
                         <div className="flex gap-3 flex-shrink-0">
@@ -979,7 +984,7 @@
             };
 
             return (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
                     <div className={`relative w-full max-w-md p-6 rounded-2xl shadow-2xl ${themeClasses.modalBg || 'bg-gray-800 border-gray-600'} border-2 modal-content max-h-[90vh] overflow-y-auto`}>
                         
                         {showOverwriteWarning ? (
@@ -1032,6 +1037,37 @@
                             </>
                         )}
                     </div>
+                </div>
+            );
+        };
+
+        const DeleteAllConfirmationModal = ({ isOpen, onClose, onConfirm, themeClasses }) => {
+            if (!isOpen) return null;
+            return (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+                     <div className={`relative w-full max-w-sm p-6 rounded-2xl shadow-2xl ${themeClasses.modalBg || 'bg-gray-800 border-gray-600'} border-2 modal-content`}>
+                        <div className="flex flex-col items-center text-center animate-pulse">
+                            <div className="bg-red-500/20 p-4 rounded-full mb-3 border-2 border-red-500">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </div>
+                            <h3 className="text-xl font-bold text-red-400 mb-2">¿Empezar Día Nuevo?</h3>
+                            <p className={`${themeClasses.secondaryText || 'text-gray-300'} mb-6 text-sm`}>
+                                Estás a punto de borrar <strong>todas las tareas</strong> de la lista.
+                                <br/><br/>
+                                <span className="text-xs opacity-70">Asegúrate de haber generado tu E.O.D.R. antes de continuar. Esta acción no se puede deshacer.</span>
+                            </p>
+                            <div className="flex flex-col gap-3 w-full">
+                                <button onClick={onConfirm} className="w-full py-3 rounded-xl font-bold text-white bg-red-600 hover:bg-red-700 transition shadow-lg">
+                                    Sí, Limpiar Todo
+                                </button>
+                                <button onClick={onClose} className="w-full py-3 rounded-xl font-bold text-gray-300 bg-gray-700 hover:bg-gray-600 transition">
+                                    Cancelar
+                                </button>
+                            </div>
+                        </div>
+                     </div>
                 </div>
             );
         };
@@ -1148,7 +1184,7 @@
             };
 
             return (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
                     <div className={`relative w-full max-w-lg p-6 rounded-2xl shadow-2xl border-2 modal-content max-h-[90vh] overflow-y-auto ${themeClasses.modalBg}`}>
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 flex items-center gap-2">
@@ -1246,7 +1282,7 @@
 
         const App = () => {
             const { celebration, themeClasses } = useCelebration(birthdaysList);
-            const { tasks, errorMessage, setErrorMessage, addTask, deleteTask, toggleTimer, updateTaskDetails, sortTasksByShop, resetTaskTimer, stopAllTimers, statusMessage, resumeStoppedTimers, clearStatusMessage, syncTasksTime } = useTasks();
+            const { tasks, errorMessage, setErrorMessage, addTask, deleteTask, deleteAllTasks, toggleTimer, updateTaskDetails, sortTasksByShop, resetTaskTimer, stopAllTimers, statusMessage, resumeStoppedTimers, clearStatusMessage, syncTasksTime } = useTasks();
             const [pastReports, setPastReports] = usePersistentState('reports', []);
             const [reportOutput, setReportOutput] = useState('');
             const [calendarSelectedDate, setCalendarSelectedDate] = useState(getTodayID());
@@ -1256,6 +1292,8 @@
 
             const [isSalaryModalOpen, setIsSalaryModalOpen] = useState(false);
             const [hourlyRate, setHourlyRate] = usePersistentState('hourlyRate', '');
+
+            const [isDeleteAllModalOpen, setIsDeleteAllModalOpen] = useState(false);
 
             useEffect(() => { 
                 document.getElementById('root').style.zIndex = '10'; 
@@ -1299,6 +1337,8 @@
                     <ReportConfigModal isOpen={isReportModalOpen} onClose={() => setIsReportModalOpen(false)} onGenerate={confirmGenerateReport} tasks={tasks} syncTasksTime={syncTasksTime} themeClasses={themeClasses} selectedReportDate={selectedReportDate} setSelectedReportDate={setSelectedReportDate} pastReports={pastReports} />
                     
                     <SalaryCalculatorModal isOpen={isSalaryModalOpen} onClose={() => setIsSalaryModalOpen(false)} pastReports={pastReports} hourlyRate={hourlyRate} setHourlyRate={setHourlyRate} themeClasses={themeClasses} />
+
+                    <DeleteAllConfirmationModal isOpen={isDeleteAllModalOpen} onClose={() => setIsDeleteAllModalOpen(false)} onConfirm={() => { deleteAllTasks(); setIsDeleteAllModalOpen(false); }} themeClasses={themeClasses} />
                     
                     <FloatingSalaryButton onClick={() => setIsSalaryModalOpen(true)} />
 
@@ -1312,21 +1352,29 @@
                             <div className="space-y-4">
                                 <hr className={`border-t ${themeClasses.inputBorder}`} />
                                 <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
-                                    <button onClick={sortTasksByShop} className="bg-gray-600 text-white px-4 py-2 text-sm rounded-full font-semibold hover:bg-gray-700 transition duration-300 shadow-lg w-full sm:w-auto">Ordenar por Tienda</button>
+                                    <button type="button" onClick={sortTasksByShop} className="bg-gray-600 text-white px-4 py-2 text-sm rounded-full font-semibold hover:bg-gray-700 transition duration-300 shadow-lg w-full sm:w-auto">Ordenar por Tienda</button>
+                                    
+                                    <button type="button" onClick={() => setIsDeleteAllModalOpen(true)} className="bg-red-800 hover:bg-red-900 text-white px-4 py-2 text-sm rounded-full font-semibold transition duration-300 shadow-lg w-full sm:w-auto flex items-center justify-center gap-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                        Limpiar Todo
+                                    </button>
+
                                     {hasRunningTask && (
-                                        <button onClick={stopAllTimers} className={`bg-purple-700 hover:bg-purple-800 text-white px-4 py-2 text-sm rounded-full font-semibold transition duration-300 shadow-lg w-full sm:w-auto`} title="Detener todos los cronómetros activos">Detener Todas las Tareas</button>
+                                        <button type="button" onClick={stopAllTimers} className={`bg-purple-700 hover:bg-purple-800 text-white px-4 py-2 text-sm rounded-full font-semibold transition duration-300 shadow-lg w-full sm:w-auto`} title="Detener todos los cronómetros activos">Detener Tareas</button>
                                     )}
                                 </div>
 
                                 <div className="max-h-[35vh] overflow-y-auto task-scroll pr-2 space-y-3">
                                     {tasks.length > 0 ? tasks.map((task) => (
                                         <TaskListItem key={task.id} task={task} toggleTimer={toggleTimer} deleteTask={deleteTask} updateTaskDetails={updateTaskDetails} themeClasses={themeClasses} resetTaskTimer={resetTaskTimer} celebrationTheme={celebration.theme} />
-                                    )) : (<p className={`text-center italic ${themeClasses.secondaryText}`}>No hay tareas.</p>)}
+                                    )) : (<p className={`text-center italic ${themeClasses.secondaryText}`}>No hay tareas. ¡Añade algunas para empezar!</p>)}
                                 </div>
                             </div>
                             
                             <div className="flex flex-col items-center w-full">
-                                <button onClick={handleGenerateReportClick} className={`px-6 py-3 rounded-full font-semibold transition duration-300 shadow-lg mb-4 ${themeClasses.buttonAction}`}>Generar E.O.D.R.</button>
+                                <button type="button" onClick={handleGenerateReportClick} className={`px-6 py-3 rounded-full font-semibold transition duration-300 shadow-lg mb-4 ${themeClasses.buttonAction}`}>Generar E.O.D.R.</button>
                                 
                                 <ReportViewer content={reportOutput} themeClasses={themeClasses} placeholder="El reporte aparecerá aquí..." />
                             </div>
