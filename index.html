@@ -51,7 +51,7 @@
             background: rgba(150, 150, 150, 0.6); 
         }
 
-        /* --- Animación de Brillo (Glow) Halloween --- */
+        /* --- Animaciones Generales --- */
         @keyframes subtle-container-glow {
             0%, 100% { box-shadow: 0 0 15px rgba(255, 140, 0, 0.4), 0 0 5px rgba(128, 0, 128, 0.2); }
             50% { box-shadow: 0 0 25px rgba(255, 165, 0, 0.7), 0 0 10px rgba(255, 215, 0, 0.5); }
@@ -63,10 +63,9 @@
             border: 1px solid rgba(50, 50, 50, 0.5); 
         }
 
-        /* --- Animación de Brillo Festivo (Party Glow) --- */
         @keyframes party-container-glow {
-            0%, 100% { box-shadow: 0 0 20px rgba(217, 70, 239, 0.5), 0 0 8px rgba(34, 211, 238, 0.4); } /* Fucsia y Cian */
-            50% { box-shadow: 0 0 30px rgba(244, 63, 94, 0.7), 0 0 15px rgba(6, 182, 212, 0.6); } /* Rosa y Cian brillante */
+            0%, 100% { box-shadow: 0 0 20px rgba(217, 70, 239, 0.5), 0 0 8px rgba(34, 211, 238, 0.4); } 
+            50% { box-shadow: 0 0 30px rgba(244, 63, 94, 0.7), 0 0 15px rgba(6, 182, 212, 0.6); }
         }
         .party-glow-card {
             animation: party-container-glow 5s infinite ease-in-out alternate;
@@ -75,7 +74,7 @@
             border: 1px solid rgba(120, 80, 150, 0.5);
         }
         
-        /* --- Estilos de Partículas (Niebla) --- */
+        /* Efectos visuales específicos */
         @keyframes particle-drift-and-fade {
             0% { transform: translate(0, 0) scale(0.8); opacity: 0; }
             25% { transform: translate(calc(var(--rand-x) * 0.25px), 25vh) scale(1); opacity: 0.5; }
@@ -90,21 +89,16 @@
         }
         .animate-particle { animation: particle-drift-and-fade var(--duration) linear infinite; }
         
-        /* --- Estilos de Confeti (Fiesta) --- */
         @keyframes confetti-fall {
             0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
             100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
         }
         .confetti {
-            position: fixed;
-            top: 0;
-            pointer-events: none;
-            z-index: 1;
+            position: fixed; top: 0; pointer-events: none; z-index: 1;
             animation: confetti-fall var(--duration) linear infinite;
             animation-delay: var(--delay);
         }
 
-        /* --- Estilos de Telaraña --- */
         .spider-web {
             position: absolute; top: 0; left: 0; width: 150px; height: 150px;
             pointer-events: none; z-index: 2; opacity: 0.5;
@@ -130,7 +124,6 @@
         .spider-web .line1 { width: 120px; height: 2px; top: 0; left: 0; transform-origin: top left; transform: rotate(25deg); }
         .spider-web .line2 { width: 120px; height: 2px; top: 0; left: 0; transform-origin: top left; transform: rotate(-25deg); }
 
-        /* --- Estilos de Nieve (Navidad) --- */
         @keyframes snowfall {
             0% { transform: translateY(-10vh) translateX(0); }
             100% { transform: translateY(110vh) translateX(calc(var(--drift) * 15vw)); }
@@ -143,7 +136,6 @@
             animation-delay: var(--delay);
         }
 
-        /* --- Estilos de Luces (Navidad) --- */
         @keyframes twinkle {
             0%, 100% { opacity: 0.6; transform: scale(0.9); }
             50% { opacity: 1; transform: scale(1.1); }
@@ -154,7 +146,6 @@
             z-index: 1; pointer-events: none;
         }
 
-        /* --- Estilos de Fantasma (Halloween) --- */
         @keyframes float-ghost {
             0% { transform: translate(var(--start-x), 100vh) scale(1); opacity: 0; }
             20% { opacity: 0.6; }
@@ -170,21 +161,16 @@
             filter: drop-shadow(0 0 15px rgba(200, 220, 255, 0.6));
         }
         
-        /* --- Estilos de Magia (Bianca Bday) --- */
         @keyframes magic-float {
             0% { transform: translateY(110vh) rotate(0deg); opacity: 1; }
             100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
         }
         .magic-particle {
-            position: fixed;
-            top: 0;
-            pointer-events: none;
-            z-index: 1;
+            position: fixed; top: 0; pointer-events: none; z-index: 1;
             animation: magic-float var(--duration) linear infinite;
             animation-delay: var(--delay);
         }
         
-        /* --- Animación Modal --- */
         @keyframes modal-pop {
             0% { transform: scale(0.9); opacity: 0; }
             100% { transform: scale(1); opacity: 1; }
@@ -193,7 +179,6 @@
             animation: modal-pop 0.3s ease-out forwards;
         }
 
-        /* --- Salary Fab Button Animation (Wiggle & Shine) --- */
         @keyframes wiggle-badge {
             0%, 100% { transform: rotate(-5deg); }
             50% { transform: rotate(5deg); }
@@ -202,17 +187,12 @@
             animation: wiggle-badge 1s ease-in-out infinite;
         }
 
-        /* Shine Sweep Animation */
         @keyframes shine-sweep {
             0% { transform: translateX(-150%) skewX(-25deg); }
             100% { transform: translateX(150%) skewX(-25deg); }
         }
         .shine-bar {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: linear-gradient(to right, transparent, rgba(255,255,255,0.7), transparent);
             animation: shine-sweep 3s infinite ease-in-out;
         }
@@ -226,7 +206,7 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo, useCallback } = React;
 
-        // --- SECTION: CONSTANTS AND CONFIGURATION ---
+        // --- SECTION: DATA CONSTANTS ---
         const birthdaysList = [
             { name: "Seba y Estefania", date: "12-08" },
             { name: "Bianca", date: "12-18" },
@@ -239,38 +219,113 @@
             { name: "Valentina", date: "09-03" },
         ];
         
-        const themes = {
-            default: { bodyBg: 'bg-gray-900', cardBg: 'bg-gray-800', itemBg: 'bg-gray-700', primaryText: 'text-white', secondaryText: 'text-gray-300', accentText: 'text-yellow-300', buttonAdd: 'bg-blue-600 hover:bg-blue-700', buttonAction: 'bg-purple-600 hover:bg-purple-700', inputBorder: 'border-gray-600 focus:ring-blue-500', shopSelectBorder: 'border-yellow-600 focus:ring-yellow-500', titleFont: '', calendarActive: 'bg-blue-600 text-white', calendarDot: 'bg-yellow-400', modalBg: 'bg-gray-800 border-gray-600' },
-            halloween: { bodyBg: 'bg-gray-950', cardBg: 'bg-[#0a0a0a] shadow-2xl', itemBg: 'bg-gray-800/40 border border-gray-700/60', primaryText: 'text-orange-500', secondaryText: 'text-gray-300', accentText: 'text-yellow-400', buttonAdd: 'bg-orange-600 hover:bg-orange-700 text-white', buttonAction: 'bg-purple-700 hover:bg-purple-800 text-white', inputBorder: 'border-gray-700 focus:ring-orange-500', shopSelectBorder: 'border-orange-500 focus:ring-orange-400', titleFont: 'font-creepster tracking-widest', calendarActive: 'bg-orange-600 text-black font-bold', calendarDot: 'bg-purple-500', modalBg: 'bg-gray-900 border-orange-600' },
-            christmas: { bodyBg: 'bg-red-900', cardBg: 'bg-green-900/90 backdrop-blur-sm', itemBg: 'bg-green-800/50 border border-yellow-300/30', primaryText: 'text-white', secondaryText: 'text-gray-200', accentText: 'text-yellow-300', buttonAdd: 'bg-red-600 hover:bg-red-700 text-white', buttonAction: 'bg-yellow-500 hover:bg-yellow-600 text-green-900', inputBorder: 'border-red-400 focus:ring-red-300', shopSelectBorder: 'border-yellow-400 focus:ring-yellow-300', titleFont: 'font-christmas', calendarActive: 'bg-red-600 text-white', calendarDot: 'bg-yellow-300', modalBg: 'bg-green-900 border-yellow-400' },
-            party: { bodyBg: 'bg-black', cardBg: 'bg-gray-900/80 backdrop-blur-sm', itemBg: 'bg-gray-800/50 border border-purple-500/30', primaryText: 'text-fuchsia-400', secondaryText: 'text-gray-200', accentText: 'text-cyan-400', buttonAdd: 'bg-fuchsia-600 hover:bg-fuchsia-700 text-white', buttonAction: 'bg-cyan-500 hover:bg-cyan-600 text-white', inputBorder: 'border-gray-600 focus:ring-fuchsia-500', shopSelectBorder: 'border-cyan-500 focus:ring-cyan-400', titleFont: 'font-bold', calendarActive: 'bg-fuchsia-600 text-white', calendarDot: 'bg-cyan-400', modalBg: 'bg-gray-900 border-fuchsia-500' },
-            biancaBday: { bodyBg: 'bg-black', cardBg: 'bg-gray-950/90 backdrop-blur-sm shadow-2xl shadow-purple-500/30', itemBg: 'bg-gray-800/60 border border-purple-700/50', primaryText: 'text-purple-400', secondaryText: 'text-red-400', accentText: 'text-pink-400', buttonAdd: 'bg-red-600 hover:bg-red-700 text-white', buttonAction: 'bg-purple-600 hover:bg-purple-700 text-white', inputBorder: 'border-gray-700 focus:ring-purple-500', shopSelectBorder: 'border-pink-400 focus:ring-pink-400', titleFont: 'font-christmas', calendarActive: 'bg-pink-500 text-white', calendarDot: 'bg-purple-400', modalBg: 'bg-gray-900 border-pink-500' }
-        };
-
         const shopOptions = ["Tienda Lujosa", "Clara Tienda", "Clara Tierra"];
         const CLARA_TIENDA_TASK_NAME = "Órdenes / Tarea Única";
         
         const commonTaskOptions = [
-            "Columna CONFIRMADO", 
-            "Columna POR UPSELL", 
-            "Columna DATOS ENTREGA", 
-            "Columna RESPONDER", 
-            "Columna REMINDER", 
-            "Columna LATE VERIFICATION",
-            "Chat en vivo (filtro Abiertos)", 
-            "Chat en vivo (filtro Pendiente)", 
-            "Ordenes confirmadas sheet (CHECK info)", 
-            "CHAT Pending Orders",
-            "Facebook/Instagram Comments & Chats", 
-            "Meeting"
+            "Columna CONFIRMADO", "Columna POR UPSELL", "Columna DATOS ENTREGA", 
+            "Columna RESPONDER", "Columna REMINDER", "Columna LATE VERIFICATION",
+            "Chat en vivo (filtro Abiertos)", "Chat en vivo (filtro Pendiente)", 
+            "Ordenes confirmadas sheet (CHECK info)", "CHAT Pending Orders",
+            "Facebook/Instagram Comments & Chats", "Meeting"
         ];
 
         const shopSpecificCallTasks = {
-            "Tienda Lujosa": "Llamadas TL",
-            "Clara Tienda": "Llamadas CTienda",
-            "Clara Tierra": "Llamadas CTierra"
+            "Tienda Lujosa": "Llamadas TL", "Clara Tienda": "Llamadas CTienda", "Clara Tierra": "Llamadas CTierra"
         };
-        
+
+        // --- SECTION: REFACTORING & DESIGN PATTERNS ---
+
+        /**
+         * PATRÓN STRATEGY (Estrategia)
+         * ----------------------------
+         * Definimos estrategias de temas autónomas.
+         * Cada objeto contiene toda la configuración visual y los efectos activos necesarios.
+         * Esto permite agregar nuevos temas (festivos o no) simplemente añadiendo una nueva entrada aquí.
+         */
+        const THEME_STRATEGIES = {
+            default: { 
+                name: 'default',
+                bodyBg: 'bg-gray-900', cardBg: 'bg-gray-800', itemBg: 'bg-gray-700', 
+                primaryText: 'text-white', secondaryText: 'text-gray-300', accentText: 'text-yellow-300', 
+                buttonAdd: 'bg-blue-600 hover:bg-blue-700', buttonAction: 'bg-purple-600 hover:bg-purple-700', 
+                inputBorder: 'border-gray-600 focus:ring-blue-500', shopSelectBorder: 'border-yellow-600 focus:ring-yellow-500', 
+                titleFont: '', calendarActive: 'bg-blue-600 text-white', calendarDot: 'bg-yellow-400', 
+                modalBg: 'bg-gray-800 border-gray-600',
+                activeEffects: [], // Sin efectos especiales
+                iconPair: null
+            },
+            halloween: { 
+                name: 'halloween',
+                bodyBg: 'bg-gray-950', cardBg: 'bg-[#0a0a0a] shadow-2xl glow-card', itemBg: 'bg-gray-800/40 border border-gray-700/60', 
+                primaryText: 'text-orange-500', secondaryText: 'text-gray-300', accentText: 'text-yellow-400', 
+                buttonAdd: 'bg-orange-600 hover:bg-orange-700 text-white', buttonAction: 'bg-purple-700 hover:bg-purple-800 text-white', 
+                inputBorder: 'border-gray-700 focus:ring-orange-500', shopSelectBorder: 'border-orange-500 focus:ring-orange-400', 
+                titleFont: 'font-creepster tracking-widest', calendarActive: 'bg-orange-600 text-black font-bold', calendarDot: 'bg-purple-500', 
+                modalBg: 'bg-gray-900 border-orange-600',
+                activeEffects: ['particles', 'ghost', 'spiderweb'],
+                iconPair: ['👻', '🎃']
+            },
+            christmas: { 
+                name: 'christmas',
+                bodyBg: 'bg-red-900', cardBg: 'bg-green-900/90 backdrop-blur-sm', itemBg: 'bg-green-800/50 border border-yellow-300/30', 
+                primaryText: 'text-white', secondaryText: 'text-gray-200', accentText: 'text-yellow-300', 
+                buttonAdd: 'bg-red-600 hover:bg-red-700 text-white', buttonAction: 'bg-yellow-500 hover:bg-yellow-600 text-green-900', 
+                inputBorder: 'border-red-400 focus:ring-red-300', shopSelectBorder: 'border-yellow-400 focus:ring-yellow-300', 
+                titleFont: 'font-christmas', calendarActive: 'bg-red-600 text-white', calendarDot: 'bg-yellow-300', 
+                modalBg: 'bg-green-900 border-yellow-400',
+                activeEffects: ['snow', 'lights'],
+                iconPair: ['🎅', '🎄']
+            },
+            party: { 
+                name: 'party',
+                bodyBg: 'bg-black', cardBg: 'bg-gray-900/80 backdrop-blur-sm party-glow-card', itemBg: 'bg-gray-800/50 border border-purple-500/30', 
+                primaryText: 'text-fuchsia-400', secondaryText: 'text-gray-200', accentText: 'text-cyan-400', 
+                buttonAdd: 'bg-fuchsia-600 hover:bg-fuchsia-700 text-white', buttonAction: 'bg-cyan-500 hover:bg-cyan-600 text-white', 
+                inputBorder: 'border-gray-600 focus:ring-fuchsia-500', shopSelectBorder: 'border-cyan-500 focus:ring-cyan-400', 
+                titleFont: 'font-bold', calendarActive: 'bg-fuchsia-600 text-white', calendarDot: 'bg-cyan-400', 
+                modalBg: 'bg-gray-900 border-fuchsia-500',
+                activeEffects: ['confetti'],
+                iconPair: ['🎉', '🎂']
+            },
+            biancaBday: { 
+                name: 'biancaBday',
+                bodyBg: 'bg-black', cardBg: 'bg-gray-950/90 backdrop-blur-sm shadow-2xl shadow-purple-500/30 party-glow-card', itemBg: 'bg-gray-800/60 border border-purple-700/50', 
+                primaryText: 'text-purple-400', secondaryText: 'text-red-400', accentText: 'text-pink-400', 
+                buttonAdd: 'bg-red-600 hover:bg-red-700 text-white', buttonAction: 'bg-purple-600 hover:bg-purple-700 text-white', 
+                inputBorder: 'border-gray-700 focus:ring-purple-500', shopSelectBorder: 'border-pink-400 focus:ring-pink-400', 
+                titleFont: 'font-christmas', calendarActive: 'bg-pink-500 text-white', calendarDot: 'bg-purple-400', 
+                modalBg: 'bg-gray-900 border-pink-500',
+                activeEffects: ['magic'], // Bianca tenía magia, pero no confetti en el original
+                iconPair: ['🦄', '🐱']
+            }
+        };
+
+        // --- COMPONENTES VISUALES (EFECTOS) ---
+        // Componentes puros de presentación. No contienen lógica de negocio ni props condicionales internas.
+        const BackgroundParticles = () => { const particles = useMemo(() => Array.from({ length: 80 }).map((_, i) => ({ key: i, left: `${Math.random() * 100}vw`, size: `${2 + Math.random() * 5}px`, duration: `${20 + Math.random() * 20}s`, delay: `${Math.random() * 15}s`, randX: `${(Math.random() - 0.5) * 350}` })), []); return (<div className="w-full h-full absolute top-0 left-0">{particles.map(p => <div key={p.key} className="particle animate-particle" style={{ left: p.left, width: p.size, height: p.size, '--duration': p.duration, '--rand-x': p.randX, animationDelay: p.delay }} />)}</div>); };
+        const BackgroundConfetti = () => { const confettiPieces = useMemo(() => { const colors = ['#f43f5e', '#ec4899', '#8b5cf6', '#38bdf8']; return Array.from({ length: 100 }).map((_, i) => { const size = Math.random() * 8 + 4; const isSquare = Math.random() > 0.5; return { key: i, left: `${Math.random() * 100}vw`, width: `${size}px`, height: `${size}px`, backgroundColor: colors[Math.floor(Math.random() * colors.length)], borderRadius: isSquare ? '2px' : '50%', transform: `rotate(${Math.random() * 360}deg)`, '--duration': `${Math.random() * 5 + 5}s`, '--delay': `${Math.random() * 5}s` }; }); }, []); return (<div className="w-full h-full absolute top-0 left-0 overflow-hidden">{confettiPieces.map(style => <div key={style.key} className="confetti" style={style} />)}</div>); };
+        const BackgroundSnow = () => { const snowflakes = useMemo(() => Array.from({ length: 150 }).map((_, i) => { const size = Math.random() * 4 + 2; return { key: i, left: `${Math.random() * 100}vw`, width: `${size}px`, height: `${size}px`, '--duration': `${Math.random() * 10 + 10}s`, '--delay': `${Math.random() * 10}s`, '--drift': Math.random() - 0.5 }; }), []); return (<div className="w-full h-full absolute top-0 left-0 overflow-hidden">{snowflakes.map(style => <div key={style.key} className="snowflake" style={style} />)}</div>); };
+        const BackgroundChristmasLights = () => { const lights = useMemo(() => { const colors = ['#f44336', '#4caf50', '#2196f3', '#ffeb3b']; return Array.from({ length: 40 }).map((_, i) => { const size = Math.random() * 10 + 5; return { key: i, top: `${Math.random() * 100}vh`, left: `${Math.random() * 100}vw`, width: `${size}px`, height: `${size}px`, backgroundColor: colors[i % colors.length], boxShadow: `0 0 15px 5px ${colors[i % colors.length]}66`, '--duration': `${Math.random() * 2 + 1.5}s`, animationDelay: `${Math.random() * 2}s` }; }); }, []); return (<div className="w-full h-full absolute top-0 left-0">{lights.map(style => <div key={style.key} className="christmas-light" style={style} />)}</div>); };
+        const BackgroundGhost = () => { const ghosts = useMemo(() => Array.from({ length: 5 }).map((_, i) => ({ key: i, '--duration': `${Math.random() * 15 + 10}s`, '--delay': `${Math.random() * 10}s`, '--start-x': `${Math.random() * 80 + 10}vw`, '--end-x': `${Math.random() * 80 + 10}vw`, width: `${Math.random() * 50 + 50}px` })), []); return (<div className="w-full h-full absolute top-0 left-0 overflow-hidden">{ghosts.map(style => (<svg key={style.key} className="ghost" style={style} viewBox="0 0 100 125"><path d="M10 115 C 10 115, 10 95, 20 95 C 30 95, 30 115, 30 115 C 30 115, 30 95, 40 95 C 50 95, 50 115, 50 115 C 50 115, 50 95, 60 95 C 70 95, 70 115, 70 115 C 70 115, 70 95, 80 95 C 90 95, 90 115, 90 115 L 90 60 C 90 20, 50 10, 50 10 C 50 10, 10 20, 10 60 Z M 30 60 C 35 60, 35 50, 30 50 C 25 50, 25 60, 30 60 Z M 70 60 C 75 60, 75 50, 70 50 C 65 50, 65 60, 70 60 Z" /></svg>))}</div>); };
+        const BackgroundMagic = () => { const particles = useMemo(() => { const emojis = ['🦄', '🐱', '✨', '💜', '❤️', '💖']; return Array.from({ length: 100 }).map((_, i) => { return { key: i, left: `${Math.random() * 100}vw`, fontSize: `${Math.random() * 1.5 + 0.75}rem`, opacity: Math.random() * 0.5 + 0.5, emoji: emojis[i % emojis.length], '--duration': `${Math.random() * 10 + 8}s`, '--delay': `${Math.random() * 8}s` }; }); }, []); return (<div className="w-full h-full absolute top-0 left-0 overflow-hidden">{particles.map(style => <div key={style.key} className="magic-particle" style={style}>{style.emoji}</div>)}</div>); };
+        const SpiderWeb = () => { return (<><div className="spider-web"><div className="line1"></div><div className="line2"></div></div><div className="spider-web" style={{ left: 'auto', right: 0, transform: 'scaleX(-1)' }}><div className="line1"></div><div className="line2"></div></div></>); };
+
+        /**
+         * PATRÓN REGISTRY (Registro) de Efectos
+         * Mapea un string (clave) a un componente React (valor).
+         * Desacopla el ThemeWrapper de los componentes específicos.
+         */
+        const EFFECT_COMPONENTS = {
+            'particles': BackgroundParticles,
+            'ghost': BackgroundGhost,
+            'confetti': BackgroundConfetti,
+            'snow': BackgroundSnow,
+            'lights': BackgroundChristmasLights,
+            'magic': BackgroundMagic,
+            'spiderweb': SpiderWeb
+        };
+
         // --- SECTION: UTILITY FUNCTIONS ---
         const formatTime = (ms) => {
             if (ms < 0) return '00:00:00';
@@ -364,34 +419,58 @@
             return [state, setState];
         };
 
-        const useCelebration = (birthdays) => {
-            const checkBirthday = useCallback((birthdays) => {
+        /**
+         * PATRÓN FACTORY METHOD (Simplificado)
+         * ------------------------------------
+         * `useThemeManager` decide qué tema usar basado en el contexto (fecha).
+         * Devuelve la 'Estrategia' correcta (objeto de configuración) y el mensaje.
+         */
+        const useThemeManager = (birthdays) => {
+            const getBirthdayPerson = useCallback((birthdays) => {
                 const today = new Date();
                 const todayFormatted = `${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
                 const found = birthdays.find(b => b.date === todayFormatted);
                 return found ? found.name : null;
             }, []);
 
-            const celebration = useMemo(() => {
+            // Lógica de decisión centralizada
+            const themeData = useMemo(() => {
                 const today = new Date();
                 const month = today.getMonth() + 1;
-                const birthdayPerson = checkBirthday(birthdays);
-
+                const birthdayPerson = getBirthdayPerson(birthdays);
+                
+                let themeKey = 'default';
+                let message = '';
+                
+                // 1. Prioridad: Cumpleaños
                 if (birthdayPerson) {
                     if (birthdayPerson === "Bianca") {
-                        return { theme: 'biancaBday', message: `¡Feliz Cumpleaños Bianca! 🦄🐱`, icon: 'bianca' };
+                        themeKey = 'biancaBday';
+                        message = `¡Feliz Cumpleaños Bianca! 🦄🐱`;
+                    } else {
+                        themeKey = 'party';
+                        message = `¡Feliz Cumpleaños ${birthdayPerson}! 🎉`;
                     }
-                    return { theme: 'party', message: `¡Feliz Cumpleaños ${birthdayPerson}! 🎉`, icon: 'party' };
+                } 
+                // 2. Prioridad: Festividades
+                else if (month === 10) {
+                    themeKey = 'halloween';
+                    message = '¡Feliz Halloween!';
+                } else if (month === 12) {
+                    themeKey = 'christmas';
+                    message = '¡Feliz Navidad!';
                 }
-
-                if (month === 10) return { theme: 'halloween', message: '¡Feliz Halloween!', icon: 'halloween' };
-                if (month === 12) return { theme: 'christmas', message: '¡Feliz Navidad!', icon: 'christmas' };
                 
-                return { theme: 'default', message: '', icon: 'default' };
-            }, [birthdays, checkBirthday]);
+                // Recuperar la estrategia completa del registro global
+                const strategy = THEME_STRATEGIES[themeKey] || THEME_STRATEGIES.default;
+                
+                return { 
+                    strategy, // Contiene clases CSS y activeEffects
+                    message 
+                };
+            }, [birthdays, getBirthdayPerson]);
             
-            const themeClasses = useMemo(() => themes[celebration.theme] || themes.default, [celebration.theme]);
-            return { celebration, themeClasses };
+            return themeData;
         };
 
         const useTasks = () => {
@@ -568,31 +647,25 @@
             return { tasks, errorMessage, setErrorMessage, addTask, deleteTask, deleteAllTasks, toggleTimer, updateTaskDetails, sortTasksByShop, resetTaskTimer, stopAllTimers, statusMessage, resumeStoppedTimers, clearStatusMessage, syncTasksTime };
         };
 
-        // --- SECTION: UI COMPONENTS ---
+        const Title = ({ themeClasses, celebrationMessage }) => { 
+            const shadowStyle = themeClasses.name === 'halloween' ? '[text-shadow:0_0_8px_rgba(255,165,0,0.6)]' : themeClasses.name === 'party' ? '[text-shadow:0_0_10px_rgba(217,70,239,0.7)]' : themeClasses.name === 'biancaBday' ? '[text-shadow:0_0_12px_rgba(236,72,153,0.6)]' : '';
+            
+            // Usamos iconPair de la estrategia si existe
+            const [leftIcon, rightIcon] = themeClasses.iconPair || [null, null];
 
-        const BackgroundParticles = ({ isHalloween }) => { if (!isHalloween) return null; const particles = useMemo(() => Array.from({ length: 80 }).map((_, i) => ({ key: i, left: `${Math.random() * 100}vw`, size: `${2 + Math.random() * 5}px`, duration: `${20 + Math.random() * 20}s`, delay: `${Math.random() * 15}s`, randX: `${(Math.random() - 0.5) * 350}` })), []); return (<div className="w-full h-full absolute top-0 left-0">{particles.map(p => <div key={p.key} className="particle animate-particle" style={{ left: p.left, width: p.size, height: p.size, '--duration': p.duration, '--rand-x': p.randX, animationDelay: p.delay }} />)}</div>); };
-        const BackgroundConfetti = ({ isParty }) => { if (!isParty) return null; const confettiPieces = useMemo(() => { const colors = ['#f43f5e', '#ec4899', '#8b5cf6', '#38bdf8']; return Array.from({ length: 100 }).map((_, i) => { const size = Math.random() * 8 + 4; const isSquare = Math.random() > 0.5; return { key: i, left: `${Math.random() * 100}vw`, width: `${size}px`, height: `${size}px`, backgroundColor: colors[Math.floor(Math.random() * colors.length)], borderRadius: isSquare ? '2px' : '50%', transform: `rotate(${Math.random() * 360}deg)`, '--duration': `${Math.random() * 5 + 5}s`, '--delay': `${Math.random() * 5}s` }; }); }, []); return (<div className="w-full h-full absolute top-0 left-0 overflow-hidden">{confettiPieces.map(style => <div key={style.key} className="confetti" style={style} />)}</div>); };
-        const BackgroundSnow = ({ isChristmas }) => { if (!isChristmas) return null; const snowflakes = useMemo(() => Array.from({ length: 150 }).map((_, i) => { const size = Math.random() * 4 + 2; return { key: i, left: `${Math.random() * 100}vw`, width: `${size}px`, height: `${size}px`, '--duration': `${Math.random() * 10 + 10}s`, '--delay': `${Math.random() * 10}s`, '--drift': Math.random() - 0.5 }; }), []); return (<div className="w-full h-full absolute top-0 left-0 overflow-hidden">{snowflakes.map(style => <div key={style.key} className="snowflake" style={style} />)}</div>); };
-        const BackgroundChristmasLights = ({ isChristmas }) => { if (!isChristmas) return null; const lights = useMemo(() => { const colors = ['#f44336', '#4caf50', '#2196f3', '#ffeb3b']; return Array.from({ length: 40 }).map((_, i) => { const size = Math.random() * 10 + 5; return { key: i, top: `${Math.random() * 100}vh`, left: `${Math.random() * 100}vw`, width: `${size}px`, height: `${size}px`, backgroundColor: colors[i % colors.length], boxShadow: `0 0 15px 5px ${colors[i % colors.length]}66`, '--duration': `${Math.random() * 2 + 1.5}s`, animationDelay: `${Math.random() * 2}s` }; }); }, []); return (<div className="w-full h-full absolute top-0 left-0">{lights.map(style => <div key={style.key} className="christmas-light" style={style} />)}</div>); };
-        const BackgroundGhost = ({ isHalloween }) => { if (!isHalloween) return null; const ghosts = useMemo(() => Array.from({ length: 5 }).map((_, i) => ({ key: i, '--duration': `${Math.random() * 15 + 10}s`, '--delay': `${Math.random() * 10}s`, '--start-x': `${Math.random() * 80 + 10}vw`, '--end-x': `${Math.random() * 80 + 10}vw`, width: `${Math.random() * 50 + 50}px` })), []); return (<div className="w-full h-full absolute top-0 left-0 overflow-hidden">{ghosts.map(style => (<svg key={style.key} className="ghost" style={style} viewBox="0 0 100 125"><path d="M10 115 C 10 115, 10 95, 20 95 C 30 95, 30 115, 30 115 C 30 115, 30 95, 40 95 C 50 95, 50 115, 50 115 C 50 115, 50 95, 60 95 C 70 95, 70 115, 70 115 C 70 115, 70 95, 80 95 C 90 95, 90 115, 90 115 L 90 60 C 90 20, 50 10, 50 10 C 50 10, 10 20, 10 60 Z M 30 60 C 35 60, 35 50, 30 50 C 25 50, 25 60, 30 60 Z M 70 60 C 75 60, 75 50, 70 50 C 65 50, 65 60, 70 60 Z" /></svg>))}</div>); };
-        const BackgroundMagic = ({ isBiancaBday }) => { if (!isBiancaBday) return null; const particles = useMemo(() => { const emojis = ['🦄', '🐱', '✨', '💜', '❤️', '💖']; return Array.from({ length: 100 }).map((_, i) => { return { key: i, left: `${Math.random() * 100}vw`, fontSize: `${Math.random() * 1.5 + 0.75}rem`, opacity: Math.random() * 0.5 + 0.5, emoji: emojis[i % emojis.length], '--duration': `${Math.random() * 10 + 8}s`, '--delay': `${Math.random() * 8}s` }; }); }, []); return (<div className="w-full h-full absolute top-0 left-0 overflow-hidden">{particles.map(style => <div key={style.key} className="magic-particle" style={style}>{style.emoji}</div>)}</div>); };
-        const SpiderWeb = ({ isHalloween }) => { if (!isHalloween) return null; return (<><div className="spider-web"><div className="line1"></div><div className="line2"></div></div><div className="spider-web" style={{ left: 'auto', right: 0, transform: 'scaleX(-1)' }}><div className="line1"></div><div className="line2"></div></div></>); };
-
-        const Title = ({ themeClasses, celebration }) => { 
-            const shadowStyle = celebration.theme === 'halloween' ? '[text-shadow:0_0_8px_rgba(255,165,0,0.6)]' : celebration.theme === 'party' ? '[text-shadow:0_0_10px_rgba(217,70,239,0.7)]' : celebration.theme === 'biancaBday' ? '[text-shadow:0_0_12px_rgba(236,72,153,0.6)]' : '';
-            const renderIcon = (icon) => {
-                switch (icon) {
-                    case 'halloween': return (<><span className="inline-block transform -rotate-12 scale-110 mr-2">👻</span>Task Manager TL<span className="inline-block transform rotate-12 scale-110 ml-2">🎃</span></>);
-                    case 'christmas': return (<><span className="inline-block transform -rotate-12 scale-110 mr-2 text-3xl">🎅</span>Task Manager TL<span className="inline-block transform rotate-12 scale-110 ml-2 text-3xl">🎄</span></>);
-                    case 'party': return (<><span className="inline-block transform -rotate-12 scale-110 mr-2 text-3xl">🎉</span>Task Manager TL<span className="inline-block transform rotate-12 scale-110 ml-2 text-3xl">🎂</span></>);
-                    case 'bianca': return (<><span className="inline-block transform -rotate-12 scale-110 mr-2 text-3xl">🦄</span>Task Manager TL<span className="inline-block transform rotate-12 scale-110 ml-2 text-3xl">🐱</span></>);
-                    default: return 'Task Manager TL';
-                }
-            };
-            return (<div className="text-center mb-4"><h1 className={`text-4xl font-extrabold transition-colors duration-500 ${themeClasses.primaryText} ${themeClasses.titleFont} ${shadowStyle}`}>{renderIcon(celebration.icon)}</h1>{celebration.message && <p className={`mt-2 text-lg font-semibold animate-pulse ${themeClasses.accentText}`}>{celebration.message}</p>}</div>);
+            return (
+                <div className="text-center mb-4">
+                    <h1 className={`text-4xl font-extrabold transition-colors duration-500 ${themeClasses.primaryText} ${themeClasses.titleFont} ${shadowStyle}`}>
+                        {leftIcon && <span className="inline-block transform -rotate-12 scale-110 mr-2 text-3xl">{leftIcon}</span>}
+                        Task Manager TL
+                        {rightIcon && <span className="inline-block transform rotate-12 scale-110 ml-2 text-3xl">{rightIcon}</span>}
+                    </h1>
+                    {celebrationMessage && <p className={`mt-2 text-lg font-semibold animate-pulse ${themeClasses.accentText}`}>{celebrationMessage}</p>}
+                </div>
+            );
         };
         
-        const TaskListItem = ({ task, toggleTimer, deleteTask, updateTaskDetails, themeClasses, resetTaskTimer, celebrationTheme }) => {
+        const TaskListItem = ({ task, toggleTimer, deleteTask, updateTaskDetails, themeClasses, resetTaskTimer, celebrationThemeName }) => {
             const [isEditingTime, setIsEditingTime] = useState(false); 
             const [editedTime, setEditedTime] = useState(formatTime(task.elapsedTime)); 
             const [isEditingQuantity, setIsEditingQuantity] = useState(false); 
@@ -615,7 +688,7 @@
             const handleResetClick = () => { resetTaskTimer(task.id); setIsConfirmingReset(false); };
             const handleDeleteConfirm = () => { deleteTask(task.id); setIsConfirmingDelete(false); };
 
-            const runningBorderClass = task.running ? (celebrationTheme === 'biancaBday' ? 'border-l-4 border-pink-400' : 'border-l-4 border-green-500') : 'border-l-4 border-gray-600';
+            const runningBorderClass = task.running ? (celebrationThemeName === 'biancaBday' ? 'border-l-4 border-pink-400' : 'border-l-4 border-green-500') : 'border-l-4 border-gray-600';
             const buttonIncrementClass = task.running ? 'bg-green-600 hover:bg-green-700' : themeClasses.buttonAdd.replace('w-full sm:w-auto', '').replace('py-3', 'py-1').replace('px-6', 'px-2');
             const taskNameClass = isCustomTask ? 'cursor-pointer hover:opacity-80' : 'cursor-default';
 
@@ -642,7 +715,7 @@
                                {/* Confirmación Reset */}
                                {isConfirmingReset ? ( <><button onClick={handleResetClick} className="p-2 text-white bg-red-600 rounded-full hover:bg-red-700 transition duration-300" title="Confirmar Reinicio y Cantidad"> <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"> <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /> </svg> </button> <button onClick={() => setIsConfirmingReset(false)} className="p-2 text-gray-400 hover:text-white transition duration-300" title="Cancelar"> <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"> <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /> </svg> </button></> ) : ( <><button onClick={() => { setIsConfirmingReset(true); setIsConfirmingDelete(false); }} className="p-2 text-gray-400 hover:text-pink-500 transition duration-300" title="Reiniciar Cronómetro y Cantidad"> <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}> <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m-15.357-2A8.001 8.001 0 0019.418 15m0 0H15" /> </svg> </button></> )}
                                
-                               {/* Confirmación Eliminar (Nuevo) */}
+                               {/* Confirmación Eliminar */}
                                {isConfirmingDelete ? (
                                    <>
                                        <button onClick={handleDeleteConfirm} className="p-2 text-white bg-red-600 rounded-full hover:bg-red-700 transition duration-300 shadow-lg animate-pulse" title="Confirmar Eliminar">
@@ -1281,7 +1354,12 @@
         };
 
         const App = () => {
-            const { celebration, themeClasses } = useCelebration(birthdaysList);
+            // Utilizamos el Hook "Factoría" para obtener el tema y mensaje
+            const { strategy, message } = useThemeManager(birthdaysList);
+            
+            // Extraemos clases del tema seleccionado
+            const themeClasses = strategy;
+
             const { tasks, errorMessage, setErrorMessage, addTask, deleteTask, deleteAllTasks, toggleTimer, updateTaskDetails, sortTasksByShop, resetTaskTimer, stopAllTimers, statusMessage, resumeStoppedTimers, clearStatusMessage, syncTasksTime } = useTasks();
             const [pastReports, setPastReports] = usePersistentState('reports', []);
             const [reportOutput, setReportOutput] = useState('');
@@ -1295,6 +1373,7 @@
 
             const [isDeleteAllModalOpen, setIsDeleteAllModalOpen] = useState(false);
 
+            // Aplicar fondo al body dinámicamente según el tema
             useEffect(() => { 
                 document.getElementById('root').style.zIndex = '10'; 
                 document.body.className = `${themeClasses.bodyBg} transition-colors duration-500`; 
@@ -1323,7 +1402,7 @@
                 setIsReportModalOpen(false); 
             };
 
-            const cardGlowClass = celebration.theme === 'halloween' ? 'glow-card' : (celebration.theme === 'party' || celebration.theme === 'biancaBday') ? 'party-glow-card' : '';
+            const cardGlowClass = themeClasses.name === 'halloween' ? 'glow-card' : (themeClasses.name === 'party' || themeClasses.name === 'biancaBday') ? 'party-glow-card' : '';
             const hasRunningTask = tasks.some(t => t.running);
             const selectedReportContent = useMemo(() => {
                 const found = pastReports.find(r => r.id === calendarSelectedDate);
@@ -1343,10 +1422,11 @@
                     <FloatingSalaryButton onClick={() => setIsSalaryModalOpen(true)} />
 
                     <div className={`max-w-xl w-11/12 mx-auto rounded-2xl shadow-xl p-8 pt-12 transition-colors duration-500 ${themeClasses.cardBg} max-h-[95vh] overflow-y-auto hide-scrollbar relative ${cardGlowClass}`}>
-                        <SpiderWeb isHalloween={celebration.theme === 'halloween'} />
+                        {/* Renderizar componente de fondo (Telaraña) si está en activeEffects */}
+                        {themeClasses.activeEffects.includes('spiderweb') && <SpiderWeb />}
                         
                         <div className="relative space-y-6"> 
-                            <Title themeClasses={themeClasses} celebration={celebration} />
+                            <Title themeClasses={themeClasses} celebrationMessage={message} />
                             <TaskInputForm {...{ addTask, errorMessage, setErrorMessage, themeClasses }} />
                             
                             <div className="space-y-4">
@@ -1368,7 +1448,7 @@
 
                                 <div className="max-h-[35vh] overflow-y-auto task-scroll pr-2 space-y-3">
                                     {tasks.length > 0 ? tasks.map((task) => (
-                                        <TaskListItem key={task.id} task={task} toggleTimer={toggleTimer} deleteTask={deleteTask} updateTaskDetails={updateTaskDetails} themeClasses={themeClasses} resetTaskTimer={resetTaskTimer} celebrationTheme={celebration.theme} />
+                                        <TaskListItem key={task.id} task={task} toggleTimer={toggleTimer} deleteTask={deleteTask} updateTaskDetails={updateTaskDetails} themeClasses={themeClasses} resetTaskTimer={resetTaskTimer} celebrationThemeName={themeClasses.name} />
                                     )) : (<p className={`text-center italic ${themeClasses.secondaryText}`}>No hay tareas. ¡Añade algunas para empezar!</p>)}
                                 </div>
                             </div>
@@ -1394,16 +1474,23 @@
             );
         };
         
+        /**
+         * COMPOSICIÓN: ThemeWrapper actúa como el 'Cliente' que utiliza la estrategia seleccionada.
+         * Renderiza dinámicamente los efectos de fondo basándose en la lista `activeEffects` de la estrategia.
+         */
         const ThemeWrapper = () => {
-            const { celebration } = useCelebration(birthdaysList);
+            const { strategy } = useThemeManager(birthdaysList);
+            
             return (
                 <>
-                    <BackgroundParticles isHalloween={celebration.theme === 'halloween'} /> 
-                    <BackgroundGhost isHalloween={celebration.theme === 'halloween'} />
-                    <BackgroundConfetti isParty={celebration.theme === 'party'} />
-                    <BackgroundSnow isChristmas={celebration.theme === 'christmas'} />
-                    <BackgroundChristmasLights isChristmas={celebration.theme === 'christmas'} />
-                    <BackgroundMagic isBiancaBday={celebration.theme === 'biancaBday'} />
+                    {/* Renderizado dinámico de efectos basado en la estrategia actual */}
+                    {strategy.activeEffects.map(effectKey => {
+                        const EffectComponent = EFFECT_COMPONENTS[effectKey];
+                        // Ignoramos spiderweb aquí porque se renderiza dentro del contenedor principal por CSS position relative
+                        if (effectKey === 'spiderweb') return null; 
+                        return EffectComponent ? <EffectComponent key={effectKey} /> : null;
+                    })}
+                    
                     <App />
                 </>
             );
