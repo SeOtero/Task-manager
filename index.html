@@ -422,13 +422,16 @@
                 const { shopInput, taskName, orderQuantity } = taskData;
                 if (!shopInput || !taskName) { setErrorMessage('Completa todos los campos.'); return false; }
                 const fullTaskName = `${taskName} [${shopInput}]`;
-                if (tasks.some(t => t.name.toLowerCase() === fullTaskName.toLowerCase())) { setErrorMessage(`La tarea "${fullTaskName}" ya existe.`); return false; }
+                if (tasks.some(t => t.name.toLowerCase() === fullTaskName.toLowerCase())) { 
+                    setErrorMessage(`La tarea "${fullTaskName}" ya existe.`); 
+                    return false; 
+                }
                 
                 const isCommon = commonTaskOptions.includes(taskName);
                 const isSpecific = Object.values(shopSpecificCallTasks).includes(taskName);
                 const isCustom = !isCommon && !isSpecific;
 
-                const newTask = { id: Date.now(), name: fullTaskName, rawTaskName: taskName, shop: shopInput, quantity: orderQuantity ? parseInt(orderQuantity) : null, elapsedTime: 0, running: false, lastTime: null, isCustom };
+                const newTask = { id: Date.now() + Math.random(), name: fullTaskName, rawTaskName: taskName, shop: shopInput, quantity: orderQuantity ? parseInt(orderQuantity) : null, elapsedTime: 0, running: false, lastTime: null, isCustom };
                 setTasks(prev => [...prev, newTask]);
                 setErrorMessage('');
                 return true;
@@ -675,7 +678,7 @@
             );
         };
 
-        const CalendarWidget = ({ reports, selectedDate, onSelectDate, themeClasses }) => {
+        const CalendarWidget = ({ reports = [], selectedDate, onSelectDate, themeClasses }) => {
             const [viewDate, setViewDate] = useState(new Date());
             const daysInMonth = useMemo(() => { const year = viewDate.getFullYear(); const month = viewDate.getMonth(); return new Date(year, month + 1, 0).getDate(); }, [viewDate]);
             const startDay = useMemo(() => { const year = viewDate.getFullYear(); const month = viewDate.getMonth(); return new Date(year, month, 1).getDay(); }, [viewDate]);
@@ -690,7 +693,7 @@
                     const dateObj = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
                     const dateString = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
                     const isSelected = selectedDate === dateString;
-                    const hasReport = reports.some(r => r.id === dateString);
+                    const hasReport = Array.isArray(reports) && reports.some(r => r.id === dateString);
                     const isToday = dateString === getTodayID();
                     let bgClass = "hover:bg-gray-600/50";
                     let textClass = themeClasses.secondaryText;
@@ -708,7 +711,7 @@
             );
         };
         
-        const MultiSelectCalendar = ({ reports, selectedDates, onToggleDate, onBatchUpdate, themeClasses }) => {
+        const MultiSelectCalendar = ({ reports = [], selectedDates, onToggleDate, onBatchUpdate, themeClasses }) => {
             const [viewDate, setViewDate] = useState(new Date());
             const daysInMonth = useMemo(() => { const year = viewDate.getFullYear(); const month = viewDate.getMonth(); return new Date(year, month + 1, 0).getDate(); }, [viewDate]);
             const startDay = useMemo(() => { const year = viewDate.getFullYear(); const month = viewDate.getMonth(); return new Date(year, month, 1).getDay(); }, [viewDate]);
@@ -742,7 +745,7 @@
                     const dateObj = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
                     const dateString = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
                     const isSelected = selectedDates.includes(dateString);
-                    const hasReport = reports.some(r => r.id === dateString);
+                    const hasReport = Array.isArray(reports) && reports.some(r => r.id === dateString);
                     let bgClass = "hover:bg-gray-600/50";
                     let textClass = themeClasses.secondaryText;
                     
@@ -777,12 +780,15 @@
         
         const TaskInputForm = ({ addTask, errorMessage, setErrorMessage, themeClasses }) => {
             const [shopInput, setShopInput] = useState(''); 
-            const [taskInput, setTaskInput] = useState(''); 
+            const [selectedTasks, setSelectedTasks] = useState([]);
             const [customTaskName, setCustomTaskName] = useState(''); 
             const [orderQuantity, setOrderQuantity] = useState(''); 
-            const [isCustomTask, setIsCustomTask] = useState(false); 
+            const [isGridOpen, setIsGridOpen] = useState(false);
             
-            useEffect(() => { setTaskInput(''); }, [shopInput]);
+            useEffect(() => { 
+                setSelectedTasks([]); 
+                if (shopInput) setIsGridOpen(true);
+            }, [shopInput]);
 
             const availableTasks = useMemo(() => {
                 let options = [...commonTaskOptions];
@@ -791,27 +797,112 @@
             }, [shopInput]);
 
             const handleShopChange = (e) => { setShopInput(e.target.value); };
-            const handleTaskChange = (e) => { const value = e.target.value; setTaskInput(value); setIsCustomTask(value === "OTHER_CUSTOM_TASK"); if (value !== "OTHER_CUSTOM_TASK") setCustomTaskName(''); };
-            const handleSubmit = (e) => { e.preventDefault(); const finalTaskName = isCustomTask ? customTaskName.trim() : taskInput.trim(); if (!shopInput || !finalTaskName) { setErrorMessage('Asegúrate de seleccionar una tienda y especificar una tarea.'); return; } const success = addTask({ shopInput, taskName: finalTaskName, orderQuantity }); if (success) { setShopInput(shopInput); setTaskInput(''); setCustomTaskName(''); setOrderQuantity(''); setIsCustomTask(false); setErrorMessage(''); } };
-            const optionClasses = `${themeClasses.cardBg} ${themeClasses.primaryText}`;
             
+            const toggleTaskSelection = (taskName) => {
+                if (!shopInput) return;
+                setSelectedTasks(prev => {
+                    if (prev.includes(taskName)) return prev.filter(t => t !== taskName);
+                    return [...prev, taskName];
+                });
+            };
+
+            const handleSubmit = (e) => { 
+                e.preventDefault(); 
+                if (!shopInput) { setErrorMessage('Primero selecciona una tienda.'); return; }
+                if (selectedTasks.length === 0) { setErrorMessage('Selecciona al menos una tarea.'); return; }
+
+                let anySuccess = false;
+                
+                selectedTasks.forEach(taskName => {
+                    let finalName = taskName;
+                    if (taskName === "OTHER_CUSTOM_TASK") {
+                        if (!customTaskName.trim()) return; 
+                        finalName = customTaskName.trim();
+                    }
+                    
+                    const success = addTask({ shopInput, taskName: finalName, orderQuantity });
+                    if(success) anySuccess = true;
+                });
+
+                if (anySuccess) { 
+                    setSelectedTasks([]); 
+                    setCustomTaskName(''); 
+                    setOrderQuantity(''); 
+                    setErrorMessage(''); 
+                }
+            };
+            
+            const optionClasses = `${themeClasses.cardBg} ${themeClasses.primaryText}`;
+            const isCustomSelected = selectedTasks.includes("OTHER_CUSTOM_TASK");
+
             return (
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                    <div className="flex flex-col gap-2 w-full">
-                        <select value={shopInput} onChange={handleShopChange} className={`flex-1 px-5 py-3 border-2 ${themeClasses.cardBg} ${themeClasses.accentText} ${themeClasses.shopSelectBorder} rounded-full focus:outline-none transition-all font-semibold`} required> <option value="" disabled className={optionClasses}>--- Seleccionar Tienda ---</option> {shopOptions.map(o => <option key={o} value={o} className={optionClasses}>{o}</option>)} </select>
-                        {!isCustomTask && ( 
-                            <select value={taskInput} onChange={handleTaskChange} className={`flex-1 px-5 py-3 border-2 ${themeClasses.cardBg} ${themeClasses.secondaryText} ${themeClasses.inputBorder} rounded-full focus:outline-none transition-all ${!shopInput ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={!shopInput} required> 
-                                <option value="" disabled className={optionClasses}>{shopInput ? "Seleccionar tarea" : "Primero selecciona una tienda"}</option> 
-                                {availableTasks.map(o => <option key={o} value={o} className={optionClasses}>{o}</option>)} 
-                                <option value="OTHER_CUSTOM_TASK" className={optionClasses}>Otra</option> 
-                            </select> 
+                    <div className="flex flex-col gap-3 w-full">
+                        <select value={shopInput} onChange={handleShopChange} className={`flex-1 px-5 py-3 border-2 ${themeClasses.cardBg} ${themeClasses.accentText} ${themeClasses.shopSelectBorder} rounded-full focus:outline-none transition-all font-semibold`} required> 
+                            <option value="" disabled className={optionClasses}>--- Seleccionar Tienda ---</option> 
+                            {shopOptions.map(o => <option key={o} value={o} className={optionClasses}>{o}</option>)} 
+                        </select>
+
+                        {shopInput && (
+                            <div className="flex flex-col gap-2">
+                                <div className="flex justify-between items-center px-2">
+                                    <span className={`text-xs uppercase font-bold tracking-widest ${themeClasses.secondaryText} opacity-70`}>Tareas Disponibles</span>
+                                    <button 
+                                        type="button" 
+                                        onClick={() => setIsGridOpen(!isGridOpen)}
+                                        className={`text-[10px] font-bold px-2 py-1 rounded border border-gray-600 ${themeClasses.secondaryText} hover:bg-gray-700 transition`}
+                                    >
+                                        {isGridOpen ? 'OCULTAR ▲' : 'MOSTRAR ▼'}
+                                    </button>
+                                </div>
+                                
+                                {isGridOpen && (
+                                    <div className={`p-3 rounded-xl border ${themeClasses.inputBorder} ${themeClasses.cardBg} max-h-60 overflow-y-auto task-scroll`}>
+                                        <div className="flex flex-wrap gap-2 justify-center">
+                                            {availableTasks.map(task => {
+                                                const isSelected = selectedTasks.includes(task);
+                                                return (
+                                                    <button 
+                                                        key={task}
+                                                        type="button"
+                                                        onClick={() => toggleTaskSelection(task)}
+                                                        className={`text-xs px-3 py-2 rounded-lg font-medium transition-all border ${isSelected 
+                                                            ? 'bg-green-600 text-white border-green-400 shadow-md transform scale-105' 
+                                                            : `bg-transparent ${themeClasses.secondaryText} ${themeClasses.inputBorder} hover:bg-gray-700`}`}
+                                                    >
+                                                        {task}
+                                                    </button>
+                                                );
+                                            })}
+                                            <button 
+                                                type="button"
+                                                onClick={() => toggleTaskSelection("OTHER_CUSTOM_TASK")}
+                                                className={`text-xs px-3 py-2 rounded-lg font-medium transition-all border ${isCustomSelected 
+                                                    ? 'bg-purple-600 text-white border-purple-400 shadow-md' 
+                                                    : `bg-transparent text-purple-300 border-purple-900/50 hover:bg-purple-900/20`}`}
+                                            >
+                                                + Otra
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         )}
-                        {isCustomTask && ( <input type="text" value={customTaskName} onChange={e => setCustomTaskName(e.target.value)} placeholder="Nombre de la tarea" className={`flex-1 px-5 py-3 border-2 ${themeClasses.cardBg} ${themeClasses.secondaryText} ${themeClasses.inputBorder} rounded-full focus:outline-none transition-all`} required /> )}
-                        <input type="number" value={orderQuantity} onChange={(e) => setOrderQuantity(e.target.value)} placeholder="Cantidad (opcional)" className={`flex-1 px-5 py-3 border-2 ${themeClasses.cardBg} ${themeClasses.secondaryText} ${themeClasses.inputBorder} rounded-full focus:outline-none transition-all`} />
+
+                        {isCustomSelected && isGridOpen && ( 
+                            <input type="text" value={customTaskName} onChange={e => setCustomTaskName(e.target.value)} placeholder="Nombre de la tarea personalizada..." className={`flex-1 px-5 py-3 border-2 ${themeClasses.cardBg} ${themeClasses.secondaryText} ${themeClasses.inputBorder} rounded-full focus:outline-none transition-all animate-pulse`} required /> 
+                        )}
+                        
+                        {isGridOpen && (
+                            <input type="number" value={orderQuantity} onChange={(e) => setOrderQuantity(e.target.value)} placeholder="Cantidad (opcional - aplica a todas)" className={`flex-1 px-5 py-3 border-2 ${themeClasses.cardBg} ${themeClasses.secondaryText} ${themeClasses.inputBorder} rounded-full focus:outline-none transition-all`} />
+                        )}
                     </div>
+
                     {errorMessage && <p className="text-red-400 font-medium bg-red-900/50 p-3 rounded-xl text-center">{errorMessage}</p>}
-                    <button type="submit" className={`px-6 py-3 rounded-full font-semibold transition duration-300 shadow-lg w-full sm:w-auto ${themeClasses.buttonAdd}`}>Agregar Tarea</button>
-                    {isCustomTask && <button type="button" onClick={() => { setIsCustomTask(false); setTaskInput(''); }} className="text-gray-400 hover:text-white mt-2">Cancelar Tarea Personalizada</button>}
+                    
+                    <button type="submit" className={`px-6 py-3 rounded-full font-semibold transition duration-300 shadow-lg w-full sm:w-auto ${themeClasses.buttonAdd} disabled:opacity-50 disabled:cursor-not-allowed`} disabled={!shopInput || selectedTasks.length === 0}>
+                        {selectedTasks.length > 1 ? `Agregar ${selectedTasks.length} Tareas` : 'Agregar Tarea'}
+                    </button>
                 </form>
             );
         };
@@ -837,7 +928,7 @@
                     <h3 className={`font-bold text-sm text-center uppercase tracking-wide opacity-90 ${themeClasses.primaryText}`}>Sincronizador de Tiempo</h3>
                     <div className="grid grid-cols-2 gap-4 text-sm">
                         <div className="flex flex-col"> <span className={`text-xs opacity-70 ${themeClasses.secondaryText}`}>Total en App:</span> <span className={`font-mono font-bold text-lg ${themeClasses.primaryText}`}>{formatTime(totalAppMs)}</span> </div>
-                        <div className="flex flex-col"> <label className={`text-xs opacity-70 ${themeClasses.secondaryText} mb-1`}>Timer Hubstaff (HH:MM):</label> <input type="text" value={targetTimeStr} onChange={(e) => setTargetTimeStr(e.target.value)} placeholder="ej. 05:30" className={`px-2 py-1 rounded bg-gray-900 border ${themeClasses.inputBorder} ${themeClasses.primaryText} focus:outline-none font-mono`} /> </div>
+                        <div className="flex flex-col"> <label className={`text-xs opacity-70 ${themeClasses.secondaryText} mb-1`}>Timer Webwork (HH:MM):</label> <input type="text" value={targetTimeStr} onChange={(e) => setTargetTimeStr(e.target.value)} placeholder="ej. 05:30" className={`px-2 py-1 rounded bg-gray-900 border ${themeClasses.inputBorder} ${themeClasses.primaryText} focus:outline-none font-mono`} /> </div>
                     </div>
                     {targetTimeStr && (
                         <div className={`transition-all duration-500 rounded-xl p-3 border-2 mt-2 ${isSynced ? 'bg-green-900/40 border-green-500' : 'bg-red-900/20 border-red-500'}`}>
@@ -848,16 +939,73 @@
             );
         };
 
-        const ReportConfigModal = ({ isOpen, onClose, onGenerate, tasks, syncTasksTime, themeClasses, selectedReportDate, setSelectedReportDate }) => {
+        const ReportConfigModal = ({ isOpen, onClose, onGenerate, tasks, syncTasksTime, themeClasses, selectedReportDate, setSelectedReportDate, pastReports = [] }) => {
             if (!isOpen) return null;
+            
+            const [showOverwriteWarning, setShowOverwriteWarning] = useState(false);
+
+            const handleConfirmClick = () => {
+                const reportExists = Array.isArray(pastReports) && pastReports.some(r => r.id === selectedReportDate);
+                if (reportExists) {
+                    setShowOverwriteWarning(true);
+                } else {
+                    onGenerate();
+                }
+            };
+
             return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
                     <div className={`relative w-full max-w-md p-6 rounded-2xl shadow-2xl ${themeClasses.modalBg || 'bg-gray-800 border-gray-600'} border-2 modal-content max-h-[90vh] overflow-y-auto`}>
-                        <h2 className={`text-xl font-bold mb-4 text-center ${themeClasses.primaryText}`}>Preparar Reporte</h2>
-                        <div className="mb-6"> <label className={`block text-sm font-semibold mb-2 ${themeClasses.secondaryText}`}>Fecha del Reporte:</label> <input type="date" value={selectedReportDate} onChange={(e) => setSelectedReportDate(e.target.value)} className={`w-full px-3 py-2 rounded bg-gray-900 border ${themeClasses.inputBorder} ${themeClasses.primaryText} focus:outline-none`} /> <p className="text-[10px] text-gray-500 mt-1">*Ajusta la fecha si ya pasaste la medianoche.</p> </div>
-                        <hr className={`border-t ${themeClasses.inputBorder} mb-6 opacity-50`} />
-                        <div className="mb-6"> <SyncTool tasks={tasks} syncTasksTime={syncTasksTime} themeClasses={themeClasses} /> </div>
-                        <div className="flex gap-3 mt-4"> <button onClick={onGenerate} className={`flex-1 py-3 rounded-full font-bold text-white shadow-lg ${themeClasses.buttonAction}`}> Confirmar y Generar </button> <button onClick={onClose} className="px-6 py-3 rounded-full font-bold text-gray-300 bg-gray-700 hover:bg-gray-600 transition-colors"> Cancelar </button> </div>
+                        
+                        {showOverwriteWarning ? (
+                            <div className="flex flex-col items-center text-center animate-pulse">
+                                <div className="bg-red-500/20 p-4 rounded-full mb-3 border-2 border-red-500">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                </div>
+                                <h3 className="text-xl font-bold text-red-400 mb-2">¡Cuidado!</h3>
+                                <p className="text-gray-300 mb-6">
+                                    Ya existe un reporte guardado para el día <span className="font-bold text-white">{selectedReportDate}</span>. 
+                                    <br/><br/>
+                                    Si continuas, se borrará la información anterior y se reemplazará con los datos actuales.
+                                </p>
+                                <div className="flex flex-col gap-3 w-full">
+                                    <button onClick={onGenerate} className="w-full py-3 rounded-xl font-bold text-white bg-red-600 hover:bg-red-700 transition shadow-lg">
+                                        Sí, Sobreescribir
+                                    </button>
+                                    <button onClick={() => setShowOverwriteWarning(false)} className="w-full py-3 rounded-xl font-bold text-gray-300 bg-gray-700 hover:bg-gray-600 transition">
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <>
+                                <h2 className={`text-xl font-bold mb-4 text-center ${themeClasses.primaryText}`}>Preparar Reporte</h2>
+                                
+                                <div className="mb-6"> 
+                                    <label className={`block text-sm font-semibold mb-2 text-center ${themeClasses.secondaryText}`}>Selecciona Fecha del Reporte:</label> 
+                                    <div className="border border-gray-700 rounded-xl overflow-hidden relative">
+                                        <CalendarWidget 
+                                            reports={pastReports} 
+                                            selectedDate={selectedReportDate} 
+                                            onSelectDate={setSelectedReportDate} 
+                                            themeClasses={themeClasses} 
+                                        />
+                                    </div>
+                                    <div className="text-center mt-2 flex justify-center">
+                                        <span className={`text-xs font-mono p-1 rounded bg-gray-900 border border-gray-600 ${themeClasses.accentText}`}>Fecha seleccionada: {selectedReportDate}</span>
+                                    </div>
+                                </div>
+
+                                <hr className={`border-t ${themeClasses.inputBorder} mb-6 opacity-50`} />
+                                <div className="mb-6"> <SyncTool tasks={tasks} syncTasksTime={syncTasksTime} themeClasses={themeClasses} /> </div>
+                                <div className="flex gap-3 mt-4"> 
+                                    <button onClick={handleConfirmClick} className={`flex-1 py-3 rounded-full font-bold text-white shadow-lg ${themeClasses.buttonAction}`}> Confirmar y Generar </button> 
+                                    <button onClick={onClose} className="px-6 py-3 rounded-full font-bold text-gray-300 bg-gray-700 hover:bg-gray-600 transition-colors"> Cancelar </button> 
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             );
@@ -1113,7 +1261,7 @@
                 <>
                     <GlobalStatusMessage message={statusMessage} resumeAction={resumeStoppedTimers} dismissAction={clearStatusMessage} />
                     
-                    <ReportConfigModal isOpen={isReportModalOpen} onClose={() => setIsReportModalOpen(false)} onGenerate={confirmGenerateReport} tasks={tasks} syncTasksTime={syncTasksTime} themeClasses={themeClasses} selectedReportDate={selectedReportDate} setSelectedReportDate={setSelectedReportDate} />
+                    <ReportConfigModal isOpen={isReportModalOpen} onClose={() => setIsReportModalOpen(false)} onGenerate={confirmGenerateReport} tasks={tasks} syncTasksTime={syncTasksTime} themeClasses={themeClasses} selectedReportDate={selectedReportDate} setSelectedReportDate={setSelectedReportDate} pastReports={pastReports} />
                     
                     <SalaryCalculatorModal isOpen={isSalaryModalOpen} onClose={() => setIsSalaryModalOpen(false)} pastReports={pastReports} hourlyRate={hourlyRate} setHourlyRate={setHourlyRate} themeClasses={themeClasses} />
                     
