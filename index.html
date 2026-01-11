@@ -597,6 +597,7 @@
             const [isEditingName, setIsEditingName] = useState(false); 
             const [editedName, setEditedName] = useState(task.rawTaskName);
             const [isConfirmingReset, setIsConfirmingReset] = useState(false);
+            const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
             
             const currentElapsedTime = task.running ? task.elapsedTime + (Date.now() - (task.lastTime || Date.now())) : task.elapsedTime; 
             const isClaraTiendaFixedTask = task.rawTaskName === CLARA_TIENDA_TASK_NAME;
@@ -607,6 +608,8 @@
             const handleShopEdit = () => { if (editedShop) updateTaskDetails(task.id, { shop: editedShop }); setIsEditingShop(false); };
             const handleNameEdit = () => { const nameToUpdate = editedName.trim() || 'Tarea sin Nombre'; updateTaskDetails(task.id, { rawTaskName: nameToUpdate }); setIsEditingName(false); };
             const handleResetClick = () => { resetTaskTimer(task.id); setIsConfirmingReset(false); };
+            const handleDeleteConfirm = () => { deleteTask(task.id); setIsConfirmingDelete(false); };
+
             const runningBorderClass = task.running ? (celebrationTheme === 'biancaBday' ? 'border-l-4 border-pink-400' : 'border-l-4 border-green-500') : 'border-l-4 border-gray-600';
             const buttonIncrementClass = task.running ? 'bg-green-600 hover:bg-green-700' : themeClasses.buttonAdd.replace('w-full sm:w-auto', '').replace('py-3', 'py-1').replace('px-6', 'px-2');
             const taskNameClass = isCustomTask ? 'cursor-pointer hover:opacity-80' : 'cursor-default';
@@ -631,8 +634,30 @@
                         <div className="flex flex-col sm:flex-row sm:items-center items-end gap-2 flex-grow sm:flex-grow-0">
                             <button onClick={() => toggleTimer(task.id)} className={`px-4 py-2 rounded-full text-white font-semibold transition duration-300 shadow-md ${task.running ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'} w-full sm:w-auto`}> {task.running ? 'Detener' : 'Iniciar'} </button>
                            <div className="flex items-center justify-end gap-2">
-                               {isConfirmingReset ? ( <><button onClick={handleResetClick} className="p-2 text-white bg-red-600 rounded-full hover:bg-red-700 transition duration-300" title="Confirmar Reinicio y Cantidad"> <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"> <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /> </svg> </button> <button onClick={() => setIsConfirmingReset(false)} className="p-2 text-gray-400 hover:text-white transition duration-300" title="Cancelar"> <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"> <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /> </svg> </button></> ) : ( <><button onClick={() => setIsConfirmingReset(true)} className="p-2 text-gray-400 hover:text-pink-500 transition duration-300" title="Reiniciar Cronómetro y Cantidad"> <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}> <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m-15.357-2A8.001 8.001 0 0019.418 15m0 0H15" /> </svg> </button></> )}
-                               <button onClick={() => deleteTask(task.id)} className="p-2 text-gray-400 hover:text-red-500 transition duration-300"><svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 112 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" /></svg></button>
+                               {/* Confirmación Reset */}
+                               {isConfirmingReset ? ( <><button onClick={handleResetClick} className="p-2 text-white bg-red-600 rounded-full hover:bg-red-700 transition duration-300" title="Confirmar Reinicio y Cantidad"> <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"> <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /> </svg> </button> <button onClick={() => setIsConfirmingReset(false)} className="p-2 text-gray-400 hover:text-white transition duration-300" title="Cancelar"> <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"> <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /> </svg> </button></> ) : ( <><button onClick={() => { setIsConfirmingReset(true); setIsConfirmingDelete(false); }} className="p-2 text-gray-400 hover:text-pink-500 transition duration-300" title="Reiniciar Cronómetro y Cantidad"> <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}> <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m-15.357-2A8.001 8.001 0 0019.418 15m0 0H15" /> </svg> </button></> )}
+                               
+                               {/* Confirmación Eliminar (Nuevo) */}
+                               {isConfirmingDelete ? (
+                                   <>
+                                       <button onClick={handleDeleteConfirm} className="p-2 text-white bg-red-600 rounded-full hover:bg-red-700 transition duration-300 shadow-lg animate-pulse" title="Confirmar Eliminar">
+                                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                           </svg>
+                                       </button>
+                                       <button onClick={() => setIsConfirmingDelete(false)} className="p-2 text-gray-400 hover:text-white transition duration-300" title="Cancelar">
+                                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                               <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                           </svg>
+                                       </button>
+                                   </>
+                               ) : (
+                                   <button onClick={() => { setIsConfirmingDelete(true); setIsConfirmingReset(false); }} className="p-2 text-gray-400 hover:text-red-500 transition duration-300" title="Eliminar Tarea">
+                                       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                                           <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 112 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" />
+                                       </svg>
+                                   </button>
+                               )}
                            </div>
                         </div>
                     </div>
@@ -1061,6 +1086,13 @@
                 return `${h}h ${m}m`;
             };
 
+            const decimalToTimeStr = (decimalHours) => {
+                let h = Math.floor(decimalHours);
+                let m = Math.round((decimalHours - h) * 60);
+                if (m === 60) { h++; m = 0; }
+                return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+            };
+
             const handleExportExcel = () => {
                 if (selectedSalaryDates.length === 0) {
                     alert("Selecciona al menos un día para exportar.");
@@ -1074,8 +1106,9 @@
 
                 const rate = parseFloat(hourlyRate) || 0;
                 
+                // Actualizado: Encabezados claros indicando moneda (USD) y Tiempo
                 const data = [
-                    ["Fecha", "Horas Trabajadas", "Tarifa por Hora ($)", "Total ($)"]
+                    ["Fecha", "Tiempo Trabajado", "Tarifa por Hora (USD)", "Total (USD)"]
                 ];
 
                 const sortedDates = [...selectedSalaryDates].sort();
@@ -1088,23 +1121,25 @@
                     
                     data.push([
                         date, 
-                        hours, 
+                        decimalToTimeStr(hours), // Convertimos decimal a formato HH:MM
                         rate, 
                         earning
                     ]);
                 });
 
                 data.push([]); 
-                data.push(["TOTALES", stats.totalHours, "", stats.totalEarnings]);
+                // Convertir el total de horas decimal a formato tiempo para la fila de totales
+                data.push(["TOTALES", decimalToTimeStr(stats.totalHours), "", stats.totalEarnings]);
 
                 const wb = XLSX.utils.book_new();
                 const ws = XLSX.utils.aoa_to_sheet(data);
 
+                // Ajuste de ancho de columnas para que se vea claro
                 const wscols = [
-                    {wch: 15}, 
-                    {wch: 20}, 
-                    {wch: 20}, 
-                    {wch: 20}
+                    {wch: 15}, // Fecha
+                    {wch: 20}, // Tiempo Trabajado
+                    {wch: 25}, // Tarifa
+                    {wch: 20}  // Total
                 ];
                 ws['!cols'] = wscols;
 
