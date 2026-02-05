@@ -244,6 +244,17 @@
                 activeEffects: [],
                 iconPair: null
             },
+            valentines: { 
+                name: 'valentines',
+                bodyBg: 'bg-pink-950', cardBg: 'bg-pink-900/80 backdrop-blur-sm shadow-2xl shadow-pink-500/20', itemBg: 'bg-pink-800/40 border border-pink-400/30', 
+                primaryText: 'text-pink-100', secondaryText: 'text-pink-200', accentText: 'text-red-300', 
+                buttonAdd: 'bg-pink-600 hover:bg-pink-700 text-white', buttonAction: 'bg-red-500 hover:bg-red-600 text-white', 
+                inputBorder: 'border-pink-500 focus:ring-pink-400', shopSelectBorder: 'border-red-400 focus:ring-pink-400', 
+                titleFont: 'font-bold tracking-wide', calendarActive: 'bg-pink-500 text-white', calendarDot: 'bg-red-300', 
+                modalBg: 'bg-pink-900 border-pink-500',
+                activeEffects: ['hearts'],
+                iconPair: ['💘', '💝']
+            },
             halloween: { 
                 name: 'halloween',
                 bodyBg: 'bg-gray-950', cardBg: 'bg-[#0a0a0a] shadow-2xl glow-card', itemBg: 'bg-gray-800/40 border border-gray-700/60', 
@@ -298,6 +309,7 @@
         const BackgroundChristmasLights = () => { const lights = useMemo(() => { const colors = ['#f44336', '#4caf50', '#2196f3', '#ffeb3b']; return Array.from({ length: 40 }).map((_, i) => { const size = Math.random() * 10 + 5; return { key: i, top: `${Math.random() * 100}vh`, left: `${Math.random() * 100}vw`, width: `${size}px`, height: `${size}px`, backgroundColor: colors[i % colors.length], boxShadow: `0 0 15px 5px ${colors[i % colors.length]}66`, '--duration': `${Math.random() * 2 + 1.5}s`, animationDelay: `${Math.random() * 2}s` }; }); }, []); return (<div className="w-full h-full absolute top-0 left-0">{lights.map(style => <div key={style.key} className="christmas-light" style={style} />)}</div>); };
         const BackgroundGhost = () => { const ghosts = useMemo(() => Array.from({ length: 5 }).map((_, i) => ({ key: i, '--duration': `${Math.random() * 15 + 10}s`, '--delay': `${Math.random() * 10}s`, '--start-x': `${Math.random() * 80 + 10}vw`, '--end-x': `${Math.random() * 80 + 10}vw`, width: `${Math.random() * 50 + 50}px` })), []); return (<div className="w-full h-full absolute top-0 left-0 overflow-hidden">{ghosts.map(style => (<svg key={style.key} className="ghost" style={style} viewBox="0 0 100 125"><path d="M10 115 C 10 115, 10 95, 20 95 C 30 95, 30 115, 30 115 C 30 115, 30 95, 40 95 C 50 95, 50 115, 50 115 C 50 115, 50 95, 60 95 C 70 95, 70 115, 70 115 C 70 115, 70 95, 80 95 C 90 95, 90 115, 90 115 L 90 60 C 90 20, 50 10, 50 10 C 50 10, 10 20, 10 60 Z M 30 60 C 35 60, 35 50, 30 50 C 25 50, 25 60, 30 60 Z M 70 60 C 75 60, 75 50, 70 50 C 65 50, 65 60, 70 60 Z" /></svg>))}</div>); };
         const BackgroundMagic = () => { const particles = useMemo(() => { const emojis = ['🦄', '🐱', '✨', '💜', '❤️', '💖']; return Array.from({ length: 100 }).map((_, i) => { return { key: i, left: `${Math.random() * 100}vw`, fontSize: `${Math.random() * 1.5 + 0.75}rem`, opacity: Math.random() * 0.5 + 0.5, emoji: emojis[i % emojis.length], '--duration': `${Math.random() * 10 + 8}s`, '--delay': `${Math.random() * 8}s` }; }); }, []); return (<div className="w-full h-full absolute top-0 left-0 overflow-hidden">{particles.map(style => <div key={style.key} className="magic-particle" style={style}>{style.emoji}</div>)}</div>); };
+        const BackgroundHearts = () => { const hearts = useMemo(() => { const emojis = ['❤️', '💖', '💘', '💝', '💓', '🌹']; return Array.from({ length: 50 }).map((_, i) => ({ key: i, left: `${Math.random() * 100}vw`, fontSize: `${Math.random() * 1.5 + 1}rem`, opacity: Math.random() * 0.5 + 0.3, emoji: emojis[i % emojis.length], '--duration': `${Math.random() * 5 + 5}s`, '--delay': `${Math.random() * 5}s` })); }, []); return (<div className="w-full h-full absolute top-0 left-0 overflow-hidden">{hearts.map(style => <div key={style.key} className="magic-particle" style={style}>{style.emoji}</div>)}</div>); };
         const SpiderWeb = () => { return (<><div className="spider-web"><div className="line1"></div><div className="line2"></div></div><div className="spider-web" style={{ left: 'auto', right: 0, transform: 'scaleX(-1)' }}><div className="line1"></div><div className="line2"></div></div></>); };
 
         const EFFECT_COMPONENTS = {
@@ -307,6 +319,7 @@
             'snow': BackgroundSnow,
             'lights': BackgroundChristmasLights,
             'magic': BackgroundMagic,
+            'hearts': BackgroundHearts,
             'spiderweb': SpiderWeb
         };
         // #endregion
@@ -342,7 +355,7 @@
              return `${year}-${month}-${day}`;
         };
 
-        const generateEODRContent = (tasks, reportDate) => {
+        const generateEODRContent = (tasks, reportDate, themeName) => {
             let totalMilliseconds = 0;
             const tasksByShop = tasks.reduce((acc, task) => {
                 const finalTime = task.running ? task.elapsedTime + (Date.now() - (task.lastTime || Date.now())) : task.elapsedTime;
@@ -352,6 +365,9 @@
                 totalMilliseconds += finalTime;
                 return acc;
             }, {});
+
+            // Prefijo condicional solo para San Valentín
+            const taskPrefix = themeName === 'valentines' ? '💖 ' : '';
 
             let formattedReport = [];
             Object.keys(tasksByShop).sort().forEach(shopName => {
@@ -363,7 +379,9 @@
                     const timeString = `${hours}h ${minutes}m`;
                     const quantityText = task.quantity ? ` (${task.quantity} orders)` : '';
                     const reportTaskName = task.rawTaskName || task.name.replace(` [${shopName}]`, '');
-                    formattedReport.push(`${reportTaskName}${quantityText}: ${timeString}`);
+                    
+                    // Agregamos el prefijo aquí
+                    formattedReport.push(`${taskPrefix}${reportTaskName}${quantityText}: ${timeString}`);
                 });
             });
 
@@ -416,6 +434,7 @@
             const themeData = useMemo(() => {
                 const today = new Date();
                 const month = today.getMonth() + 1;
+                const day = today.getDate();
                 const birthdayPerson = getBirthdayPerson(birthdays);
                 
                 let themeKey = 'default';
@@ -430,6 +449,8 @@
                         message = `¡Feliz Cumpleaños ${birthdayPerson}! 🎉`;
                     }
                 } 
+                // Lógica de San Valentín: Solo del 13 al 15 de Febrero
+                else if (month === 2 && day >= 13 && day <= 15) { themeKey = 'valentines'; message = '¡Feliz San Valentín!'; }
                 else if (month === 10) { themeKey = 'halloween'; message = '¡Feliz Halloween!'; } 
                 else if (month === 12) { themeKey = 'christmas'; message = '¡Feliz Navidad!'; }
                 
@@ -1084,7 +1105,8 @@
             
             const handleGenerateReportClick = () => { setIsReportModalOpen(true); };
             const confirmGenerateReport = () => {
-                const reportContent = generateEODRContent(tasks, selectedReportDate);
+                // Pasamos el nombre del tema actual para saber si agregar iconos
+                const reportContent = generateEODRContent(tasks, selectedReportDate, themeClasses.name);
                 setReportOutput(reportContent);
                 const reportDocId = selectedReportDate;
                 const newReport = { id: reportDocId, content: reportContent };
