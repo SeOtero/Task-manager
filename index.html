@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Task Manager TL</title>
+    <!-- Dependencies -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -12,7 +13,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&family=Creepster&family=Mountains+of+Christmas:wght@700&display=swap" rel="stylesheet">
+    
     <style>
+        /* #region GLOBAL STYLES & ANIMATIONS */
         body {
             font-family: 'Inter', sans-serif;
             width: 100vw; 
@@ -36,22 +39,12 @@
         .hide-scrollbar { scrollbar-width: none; }
 
         /* Custom Scrollbar for Task List */
-        .task-scroll::-webkit-scrollbar {
-            width: 6px;
-        }
-        .task-scroll::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.1); 
-            border-radius: 4px;
-        }
-        .task-scroll::-webkit-scrollbar-thumb {
-            background: rgba(150, 150, 150, 0.4); 
-            border-radius: 4px;
-        }
-        .task-scroll::-webkit-scrollbar-thumb:hover {
-            background: rgba(150, 150, 150, 0.6); 
-        }
+        .task-scroll::-webkit-scrollbar { width: 6px; }
+        .task-scroll::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.1); border-radius: 4px; }
+        .task-scroll::-webkit-scrollbar-thumb { background: rgba(150, 150, 150, 0.4); border-radius: 4px; }
+        .task-scroll::-webkit-scrollbar-thumb:hover { background: rgba(150, 150, 150, 0.6); }
 
-        /* --- Animaciones Generales --- */
+        /* Glow Animations */
         @keyframes subtle-container-glow {
             0%, 100% { box-shadow: 0 0 15px rgba(255, 140, 0, 0.4), 0 0 5px rgba(128, 0, 128, 0.2); }
             50% { box-shadow: 0 0 25px rgba(255, 165, 0, 0.7), 0 0 10px rgba(255, 215, 0, 0.5); }
@@ -74,7 +67,7 @@
             border: 1px solid rgba(120, 80, 150, 0.5);
         }
         
-        /* Efectos visuales específicos */
+        /* Specific Visual Effects */
         @keyframes particle-drift-and-fade {
             0% { transform: translate(0, 0) scale(0.8); opacity: 0; }
             25% { transform: translate(calc(var(--rand-x) * 0.25px), 25vh) scale(1); opacity: 0.5; }
@@ -196,7 +189,7 @@
             background: linear-gradient(to right, transparent, rgba(255,255,255,0.7), transparent);
             animation: shine-sweep 3s infinite ease-in-out;
         }
-        
+        /* #endregion */
     </style>
 </head>
 <body class="bg-gray-900 transition-colors duration-500">
@@ -206,7 +199,7 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo, useCallback } = React;
 
-        // --- SECTION: DATA CONSTANTS ---
+        // #region CONSTANTS & DATA
         const birthdaysList = [
             { name: "Seba y Estefania", date: "12-08" },
             { name: "Bianca", date: "12-18" },
@@ -233,16 +226,9 @@
         const shopSpecificCallTasks = {
             "Tienda Lujosa": "Llamadas TL", "Clara Tienda": "Llamadas CTienda", "Clara Tierra": "Llamadas CTierra"
         };
+        // #endregion
 
-        // --- SECTION: REFACTORING & DESIGN PATTERNS ---
-
-        /**
-         * PATRÓN STRATEGY (Estrategia)
-         * ----------------------------
-         * Definimos estrategias de temas autónomas.
-         * Cada objeto contiene toda la configuración visual y los efectos activos necesarios.
-         * Esto permite agregar nuevos temas (festivos o no) simplemente añadiendo una nueva entrada aquí.
-         */
+        // #region THEME CONFIGURATION
         const THEME_STRATEGIES = {
             default: { 
                 name: 'default',
@@ -252,7 +238,7 @@
                 inputBorder: 'border-gray-600 focus:ring-blue-500', shopSelectBorder: 'border-yellow-600 focus:ring-yellow-500', 
                 titleFont: '', calendarActive: 'bg-blue-600 text-white', calendarDot: 'bg-yellow-400', 
                 modalBg: 'bg-gray-800 border-gray-600',
-                activeEffects: [], // Sin efectos especiales
+                activeEffects: [],
                 iconPair: null
             },
             halloween: { 
@@ -296,13 +282,13 @@
                 inputBorder: 'border-gray-700 focus:ring-purple-500', shopSelectBorder: 'border-pink-400 focus:ring-pink-400', 
                 titleFont: 'font-christmas', calendarActive: 'bg-pink-500 text-white', calendarDot: 'bg-purple-400', 
                 modalBg: 'bg-gray-900 border-pink-500',
-                activeEffects: ['magic'], // Bianca tenía magia, pero no confetti en el original
+                activeEffects: ['magic'],
                 iconPair: ['🦄', '🐱']
             }
         };
+        // #endregion
 
-        // --- COMPONENTES VISUALES (EFECTOS) ---
-        // Componentes puros de presentación. No contienen lógica de negocio ni props condicionales internas.
+        // #region VISUAL COMPONENTS (EFFECTS)
         const BackgroundParticles = () => { const particles = useMemo(() => Array.from({ length: 80 }).map((_, i) => ({ key: i, left: `${Math.random() * 100}vw`, size: `${2 + Math.random() * 5}px`, duration: `${20 + Math.random() * 20}s`, delay: `${Math.random() * 15}s`, randX: `${(Math.random() - 0.5) * 350}` })), []); return (<div className="w-full h-full absolute top-0 left-0">{particles.map(p => <div key={p.key} className="particle animate-particle" style={{ left: p.left, width: p.size, height: p.size, '--duration': p.duration, '--rand-x': p.randX, animationDelay: p.delay }} />)}</div>); };
         const BackgroundConfetti = () => { const confettiPieces = useMemo(() => { const colors = ['#f43f5e', '#ec4899', '#8b5cf6', '#38bdf8']; return Array.from({ length: 100 }).map((_, i) => { const size = Math.random() * 8 + 4; const isSquare = Math.random() > 0.5; return { key: i, left: `${Math.random() * 100}vw`, width: `${size}px`, height: `${size}px`, backgroundColor: colors[Math.floor(Math.random() * colors.length)], borderRadius: isSquare ? '2px' : '50%', transform: `rotate(${Math.random() * 360}deg)`, '--duration': `${Math.random() * 5 + 5}s`, '--delay': `${Math.random() * 5}s` }; }); }, []); return (<div className="w-full h-full absolute top-0 left-0 overflow-hidden">{confettiPieces.map(style => <div key={style.key} className="confetti" style={style} />)}</div>); };
         const BackgroundSnow = () => { const snowflakes = useMemo(() => Array.from({ length: 150 }).map((_, i) => { const size = Math.random() * 4 + 2; return { key: i, left: `${Math.random() * 100}vw`, width: `${size}px`, height: `${size}px`, '--duration': `${Math.random() * 10 + 10}s`, '--delay': `${Math.random() * 10}s`, '--drift': Math.random() - 0.5 }; }), []); return (<div className="w-full h-full absolute top-0 left-0 overflow-hidden">{snowflakes.map(style => <div key={style.key} className="snowflake" style={style} />)}</div>); };
@@ -311,11 +297,6 @@
         const BackgroundMagic = () => { const particles = useMemo(() => { const emojis = ['🦄', '🐱', '✨', '💜', '❤️', '💖']; return Array.from({ length: 100 }).map((_, i) => { return { key: i, left: `${Math.random() * 100}vw`, fontSize: `${Math.random() * 1.5 + 0.75}rem`, opacity: Math.random() * 0.5 + 0.5, emoji: emojis[i % emojis.length], '--duration': `${Math.random() * 10 + 8}s`, '--delay': `${Math.random() * 8}s` }; }); }, []); return (<div className="w-full h-full absolute top-0 left-0 overflow-hidden">{particles.map(style => <div key={style.key} className="magic-particle" style={style}>{style.emoji}</div>)}</div>); };
         const SpiderWeb = () => { return (<><div className="spider-web"><div className="line1"></div><div className="line2"></div></div><div className="spider-web" style={{ left: 'auto', right: 0, transform: 'scaleX(-1)' }}><div className="line1"></div><div className="line2"></div></div></>); };
 
-        /**
-         * PATRÓN REGISTRY (Registro) de Efectos
-         * Mapea un string (clave) a un componente React (valor).
-         * Desacopla el ThemeWrapper de los componentes específicos.
-         */
         const EFFECT_COMPONENTS = {
             'particles': BackgroundParticles,
             'ghost': BackgroundGhost,
@@ -325,8 +306,9 @@
             'magic': BackgroundMagic,
             'spiderweb': SpiderWeb
         };
+        // #endregion
 
-        // --- SECTION: UTILITY FUNCTIONS ---
+        // #region UTILITIES
         const formatTime = (ms) => {
             if (ms < 0) return '00:00:00';
             const totalSeconds = Math.floor(ms / 1000);
@@ -404,8 +386,9 @@
             }
             return 0;
         };
+        // #endregion
 
-        // --- SECTION: CUSTOM HOOKS ---
+        // #region CUSTOM HOOKS
         const usePersistentState = (key, initialValue) => {
             const [state, setState] = useState(() => {
                 try {
@@ -419,12 +402,6 @@
             return [state, setState];
         };
 
-        /**
-         * PATRÓN FACTORY METHOD (Simplificado)
-         * ------------------------------------
-         * `useThemeManager` decide qué tema usar basado en el contexto (fecha).
-         * Devuelve la 'Estrategia' correcta (objeto de configuración) y el mensaje.
-         */
         const useThemeManager = (birthdays) => {
             const getBirthdayPerson = useCallback((birthdays) => {
                 const today = new Date();
@@ -433,7 +410,6 @@
                 return found ? found.name : null;
             }, []);
 
-            // Lógica de decisión centralizada
             const themeData = useMemo(() => {
                 const today = new Date();
                 const month = today.getMonth() + 1;
@@ -442,7 +418,6 @@
                 let themeKey = 'default';
                 let message = '';
                 
-                // 1. Prioridad: Cumpleaños
                 if (birthdayPerson) {
                     if (birthdayPerson === "Bianca") {
                         themeKey = 'biancaBday';
@@ -452,22 +427,11 @@
                         message = `¡Feliz Cumpleaños ${birthdayPerson}! 🎉`;
                     }
                 } 
-                // 2. Prioridad: Festividades
-                else if (month === 10) {
-                    themeKey = 'halloween';
-                    message = '¡Feliz Halloween!';
-                } else if (month === 12) {
-                    themeKey = 'christmas';
-                    message = '¡Feliz Navidad!';
-                }
+                else if (month === 10) { themeKey = 'halloween'; message = '¡Feliz Halloween!'; } 
+                else if (month === 12) { themeKey = 'christmas'; message = '¡Feliz Navidad!'; }
                 
-                // Recuperar la estrategia completa del registro global
                 const strategy = THEME_STRATEGIES[themeKey] || THEME_STRATEGIES.default;
-                
-                return { 
-                    strategy, // Contiene clases CSS y activeEffects
-                    message 
-                };
+                return { strategy, message };
             }, [birthdays, getBirthdayPerson]);
             
             return themeData;
@@ -517,11 +481,7 @@
             }, [tasks, setTasks]);
             
             const deleteTask = useCallback((id) => setTasks(prev => prev.filter(t => t.id !== id)), [setTasks]);
-
-            const deleteAllTasks = useCallback(() => {
-                setTasks([]);
-                setErrorMessage('');
-            }, [setTasks]);
+            const deleteAllTasks = useCallback(() => { setTasks([]); setErrorMessage(''); }, [setTasks]);
             
             const toggleTimer = useCallback((id) => {
                 setTasks(prev => {
@@ -541,7 +501,6 @@
                 let tasksStopped = false;
                 let lastRunningTaskId = null;
                 const now = Date.now();
-                
                 setTasks(prev => {
                     const newTasks = prev.map(t => {
                         if (t.running) {
@@ -551,37 +510,17 @@
                         }
                         return t;
                     });
-                    
-                    if (!tasksStopped) {
-                        setStatusMessage({ text: 'No hay tareas activas para detener.', taskIdToResume: null });
-                        return prev;
-                    }
-                    
-                    setStatusMessage({ 
-                        text: `Todas las tareas han sido detenidas. (Última: ${newTasks.find(t => t.id === lastRunningTaskId)?.rawTaskName || 'N/A'})`, 
-                        taskIdToResume: lastRunningTaskId 
-                    });
+                    if (!tasksStopped) { setStatusMessage({ text: 'No hay tareas activas para detener.', taskIdToResume: null }); return prev; }
+                    setStatusMessage({ text: `Todas las tareas han sido detenidas. (Última: ${newTasks.find(t => t.id === lastRunningTaskId)?.rawTaskName || 'N/A'})`, taskIdToResume: lastRunningTaskId });
                     return newTasks;
                 });
             }, [setTasks]);
 
-            const resumeStoppedTimers = useCallback(() => {
-                if (!statusMessage || statusMessage.taskIdToResume === null) return;
-                const idToResume = statusMessage.taskIdToResume;
-                toggleTimer(idToResume); 
-                setStatusMessage(null);
-            }, [statusMessage, toggleTimer]);
-
-            const clearStatusMessage = useCallback(() => {
-                setStatusMessage(null);
-            }, []);
+            const resumeStoppedTimers = useCallback(() => { if (!statusMessage || statusMessage.taskIdToResume === null) return; toggleTimer(statusMessage.taskIdToResume); setStatusMessage(null); }, [statusMessage, toggleTimer]);
+            const clearStatusMessage = useCallback(() => { setStatusMessage(null); }, []);
             
             const resetTaskTimer = useCallback((id) => {
-                setTasks(prev => prev.map(t => 
-                    t.id === id 
-                    ? { ...t, elapsedTime: 0, running: false, lastTime: null, quantity: null } 
-                    : t
-                ));
+                setTasks(prev => prev.map(t => t.id === id ? { ...t, elapsedTime: 0, running: false, lastTime: null, quantity: null } : t));
             }, [setTasks]);
             
             const updateTaskDetails = useCallback((id, newDetails) => {
@@ -590,11 +529,7 @@
                         const newRawTaskName = newDetails.rawTaskName !== undefined ? newDetails.rawTaskName : t.rawTaskName;
                         const newShop = newDetails.shop !== undefined ? newDetails.shop : t.shop;
                         const newFullName = newRawTaskName ? `${newRawTaskName} [${newShop}]` : t.name;
-
-                        if (prev.some(et => et.id !== id && et.name.toLowerCase() === newFullName.toLowerCase())) { 
-                            setErrorMessage('Esa Tarea+Tienda ya existe.'); 
-                            return t; 
-                        }
+                        if (prev.some(et => et.id !== id && et.name.toLowerCase() === newFullName.toLowerCase())) { setErrorMessage('Esa Tarea+Tienda ya existe.'); return t; }
                         setErrorMessage('');
                         return { ...t, ...newDetails, rawTaskName: newRawTaskName, shop: newShop, name: newFullName };
                     }
@@ -605,24 +540,18 @@
             const syncTasksTime = useCallback((diffMs, distributionMode, targetTaskId) => {
                 setTasks(prev => {
                     const now = Date.now();
-                    
                     if (distributionMode === 'all') {
                         const count = prev.length;
                         if (count === 0) return prev;
                         const perTask = Math.floor(diffMs / count);
                         const remainder = diffMs % count;
-                        
                         return prev.map((t, index) => {
                             const currentTaskTime = t.running ? t.elapsedTime + (now - t.lastTime) : t.elapsedTime;
                             let extra = perTask;
                             if (index === 0) extra += remainder;
                             let newElapsedTime = currentTaskTime + extra;
                             if (newElapsedTime < 0) newElapsedTime = 0;
-                            return { 
-                                ...t, 
-                                elapsedTime: newElapsedTime,
-                                lastTime: t.running ? now : null 
-                            };
+                            return { ...t, elapsedTime: newElapsedTime, lastTime: t.running ? now : null };
                         });
                     } else {
                         return prev.map(t => {
@@ -630,11 +559,7 @@
                                 const currentTaskTime = t.running ? t.elapsedTime + (now - t.lastTime) : t.elapsedTime;
                                 let newElapsedTime = currentTaskTime + diffMs;
                                 if (newElapsedTime < 0) newElapsedTime = 0;
-                                return { 
-                                    ...t, 
-                                    elapsedTime: newElapsedTime,
-                                    lastTime: t.running ? now : null
-                                };
+                                return { ...t, elapsedTime: newElapsedTime, lastTime: t.running ? now : null };
                             }
                             return t;
                         });
@@ -643,16 +568,14 @@
             }, [setTasks]);
 
             const sortTasksByShop = useCallback(() => setTasks(prev => [...prev].sort((a, b) => a.shop.localeCompare(b.shop))), [setTasks]);
-            
             return { tasks, errorMessage, setErrorMessage, addTask, deleteTask, deleteAllTasks, toggleTimer, updateTaskDetails, sortTasksByShop, resetTaskTimer, stopAllTimers, statusMessage, resumeStoppedTimers, clearStatusMessage, syncTasksTime };
         };
+        // #endregion
 
+        // #region UI COMPONENTS (SMALL)
         const Title = ({ themeClasses, celebrationMessage }) => { 
             const shadowStyle = themeClasses.name === 'halloween' ? '[text-shadow:0_0_8px_rgba(255,165,0,0.6)]' : themeClasses.name === 'party' ? '[text-shadow:0_0_10px_rgba(217,70,239,0.7)]' : themeClasses.name === 'biancaBday' ? '[text-shadow:0_0_12px_rgba(236,72,153,0.6)]' : '';
-            
-            // Usamos iconPair de la estrategia si existe
             const [leftIcon, rightIcon] = themeClasses.iconPair || [null, null];
-
             return (
                 <div className="text-center mb-4">
                     <h1 className={`text-4xl font-extrabold transition-colors duration-500 ${themeClasses.primaryText} ${themeClasses.titleFont} ${shadowStyle}`}>
@@ -678,7 +601,6 @@
             const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
             
             const currentElapsedTime = task.running ? task.elapsedTime + (Date.now() - (task.lastTime || Date.now())) : task.elapsedTime; 
-            const isClaraTiendaFixedTask = task.rawTaskName === CLARA_TIENDA_TASK_NAME;
             const isCustomTask = task.isCustom; 
             
             const handleTimeEdit = () => { const parts = editedTime.split(':').map(Number); if (parts.length === 3 && !parts.some(isNaN)) { const totalMs = (parts[0] * 3600 + parts[1] * 60 + parts[2]) * 1000; updateTaskDetails(task.id, { elapsedTime: totalMs }); } setIsEditingTime(false); };
@@ -712,28 +634,19 @@
                         <div className="flex flex-col sm:flex-row sm:items-center items-end gap-2 flex-grow sm:flex-grow-0">
                             <button onClick={() => toggleTimer(task.id)} className={`px-4 py-2 rounded-full text-white font-semibold transition duration-300 shadow-md ${task.running ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'} w-full sm:w-auto`}> {task.running ? 'Detener' : 'Iniciar'} </button>
                            <div className="flex items-center justify-end gap-2">
-                               {/* Confirmación Reset */}
                                {isConfirmingReset ? ( <><button onClick={handleResetClick} className="p-2 text-white bg-red-600 rounded-full hover:bg-red-700 transition duration-300" title="Confirmar Reinicio y Cantidad"> <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"> <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /> </svg> </button> <button onClick={() => setIsConfirmingReset(false)} className="p-2 text-gray-400 hover:text-white transition duration-300" title="Cancelar"> <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"> <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /> </svg> </button></> ) : ( <><button onClick={() => { setIsConfirmingReset(true); setIsConfirmingDelete(false); }} className="p-2 text-gray-400 hover:text-pink-500 transition duration-300" title="Reiniciar Cronómetro y Cantidad"> <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}> <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m-15.357-2A8.001 8.001 0 0019.418 15m0 0H15" /> </svg> </button></> )}
-                               
-                               {/* Confirmación Eliminar */}
                                {isConfirmingDelete ? (
                                    <>
                                        <button onClick={handleDeleteConfirm} className="p-2 text-white bg-red-600 rounded-full hover:bg-red-700 transition duration-300 shadow-lg animate-pulse" title="Confirmar Eliminar">
-                                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                           </svg>
+                                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
                                        </button>
                                        <button onClick={() => setIsConfirmingDelete(false)} className="p-2 text-gray-400 hover:text-white transition duration-300" title="Cancelar">
-                                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                               <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                                           </svg>
+                                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
                                        </button>
                                    </>
                                ) : (
                                    <button onClick={() => { setIsConfirmingDelete(true); setIsConfirmingReset(false); }} className="p-2 text-gray-400 hover:text-red-500 transition duration-300" title="Eliminar Tarea">
-                                       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-                                           <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 112 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" />
-                                       </svg>
+                                       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 112 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" /></svg>
                                    </button>
                                )}
                            </div>
@@ -780,7 +693,9 @@
                 </div>
             );
         };
+        // #endregion
 
+        // #region UI COMPONENTS (COMPLEX)
         const CalendarWidget = ({ reports = [], selectedDate, onSelectDate, themeClasses }) => {
             const [viewDate, setViewDate] = useState(new Date());
             const daysInMonth = useMemo(() => { const year = viewDate.getFullYear(); const month = viewDate.getMonth(); return new Date(year, month + 1, 0).getDate(); }, [viewDate]);
@@ -833,13 +748,8 @@
                 return dates;
             };
 
-            const handleSelectAll = () => {
-                if (onBatchUpdate) onBatchUpdate(getCurrentMonthDates(), 'add');
-            };
-
-            const handleDeselectAll = () => {
-                if (onBatchUpdate) onBatchUpdate(getCurrentMonthDates(), 'remove');
-            };
+            const handleSelectAll = () => { if (onBatchUpdate) onBatchUpdate(getCurrentMonthDates(), 'add'); };
+            const handleDeselectAll = () => { if (onBatchUpdate) onBatchUpdate(getCurrentMonthDates(), 'remove'); };
             
             const generateCalendarDays = () => {
                 const days = [];
@@ -851,12 +761,7 @@
                     const hasReport = Array.isArray(reports) && reports.some(r => r.id === dateString);
                     let bgClass = "hover:bg-gray-600/50";
                     let textClass = themeClasses.secondaryText;
-                    
-                    if (isSelected) { 
-                        bgClass = 'bg-green-600 text-white font-bold border border-green-400'; 
-                        textClass = "text-white"; 
-                    } 
-                    
+                    if (isSelected) { bgClass = 'bg-green-600 text-white font-bold border border-green-400'; textClass = "text-white"; } 
                     days.push( <div key={day} onClick={() => onToggleDate(dateString)} className={`h-10 w-10 flex flex-col items-center justify-center rounded-full cursor-pointer transition-all relative ${bgClass} ${textClass}`}> <span className="text-sm z-10">{day}</span> {hasReport && ( <div className={`absolute bottom-1 w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : (themeClasses.calendarDot || 'bg-yellow-400')}`}></div> )} </div> );
                 }
                 return days;
@@ -869,12 +774,10 @@
                         <span className={`font-bold text-lg ${themeClasses.primaryText}`}>{monthNames[viewDate.getMonth()]} {viewDate.getFullYear()}</span> 
                         <button onClick={handleNextMonth} className={`p-1 rounded-full hover:bg-gray-600/50 ${themeClasses.primaryText}`}>&gt;</button> 
                     </div>
-                    
                     <div className="flex gap-2 mb-3 justify-center">
                         <button onClick={handleSelectAll} className="text-xs px-3 py-1 bg-green-700 hover:bg-green-600 text-white rounded-full transition">Todos</button>
                         <button onClick={handleDeselectAll} className="text-xs px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-full transition">Ninguno</button>
                     </div>
-
                     <div className="grid grid-cols-7 gap-1 text-center mb-2"> {weekDays.map(d => (<div key={d} className={`text-xs font-bold opacity-70 ${themeClasses.secondaryText}`}>{d}</div>))} </div>
                     <div className="grid grid-cols-7 gap-1 justify-items-center"> {generateCalendarDays()} </div>
                 </div>
@@ -888,10 +791,7 @@
             const [orderQuantity, setOrderQuantity] = useState(''); 
             const [isGridOpen, setIsGridOpen] = useState(false);
             
-            useEffect(() => { 
-                setSelectedTasks([]); 
-                if (shopInput) setIsGridOpen(true);
-            }, [shopInput]);
+            useEffect(() => { setSelectedTasks([]); if (shopInput) setIsGridOpen(true); }, [shopInput]);
 
             const availableTasks = useMemo(() => {
                 let options = [...commonTaskOptions];
@@ -900,7 +800,6 @@
             }, [shopInput]);
 
             const handleShopChange = (e) => { setShopInput(e.target.value); };
-            
             const toggleTaskSelection = (taskName) => {
                 if (!shopInput) return;
                 setSelectedTasks(prev => {
@@ -913,26 +812,17 @@
                 e.preventDefault(); 
                 if (!shopInput) { setErrorMessage('Primero selecciona una tienda.'); return; }
                 if (selectedTasks.length === 0) { setErrorMessage('Selecciona al menos una tarea.'); return; }
-
                 let anySuccess = false;
-                
                 selectedTasks.forEach(taskName => {
                     let finalName = taskName;
                     if (taskName === "OTHER_CUSTOM_TASK") {
                         if (!customTaskName.trim()) return; 
                         finalName = customTaskName.trim();
                     }
-                    
                     const success = addTask({ shopInput, taskName: finalName, orderQuantity });
                     if(success) anySuccess = true;
                 });
-
-                if (anySuccess) { 
-                    setSelectedTasks([]); 
-                    setCustomTaskName(''); 
-                    setOrderQuantity(''); 
-                    setErrorMessage(''); 
-                }
+                if (anySuccess) { setSelectedTasks([]); setCustomTaskName(''); setOrderQuantity(''); setErrorMessage(''); }
             };
             
             const optionClasses = `${themeClasses.cardBg} ${themeClasses.primaryText}`;
@@ -945,67 +835,30 @@
                             <option value="" disabled className={optionClasses}>--- Seleccionar Tienda ---</option> 
                             {shopOptions.map(o => <option key={o} value={o} className={optionClasses}>{o}</option>)} 
                         </select>
-
                         {shopInput && (
                             <div className="flex flex-col gap-2">
                                 <div className="flex justify-between items-center px-2">
                                     <span className={`text-xs uppercase font-bold tracking-widest ${themeClasses.secondaryText} opacity-70`}>Tareas Disponibles</span>
-                                    <button 
-                                        type="button" 
-                                        onClick={() => setIsGridOpen(!isGridOpen)}
-                                        className={`text-[10px] font-bold px-2 py-1 rounded border border-gray-600 ${themeClasses.secondaryText} hover:bg-gray-700 transition`}
-                                    >
-                                        {isGridOpen ? 'OCULTAR ▲' : 'MOSTRAR ▼'}
-                                    </button>
+                                    <button type="button" onClick={() => setIsGridOpen(!isGridOpen)} className={`text-[10px] font-bold px-2 py-1 rounded border border-gray-600 ${themeClasses.secondaryText} hover:bg-gray-700 transition`}>{isGridOpen ? 'OCULTAR ▲' : 'MOSTRAR ▼'}</button>
                                 </div>
-                                
                                 {isGridOpen && (
                                     <div className={`p-3 rounded-xl border ${themeClasses.inputBorder} ${themeClasses.cardBg} max-h-60 overflow-y-auto task-scroll`}>
                                         <div className="flex flex-wrap gap-2 justify-center">
                                             {availableTasks.map(task => {
                                                 const isSelected = selectedTasks.includes(task);
-                                                return (
-                                                    <button 
-                                                        key={task}
-                                                        type="button"
-                                                        onClick={() => toggleTaskSelection(task)}
-                                                        className={`text-xs px-3 py-2 rounded-lg font-medium transition-all border ${isSelected 
-                                                            ? 'bg-green-600 text-white border-green-400 shadow-md transform scale-105' 
-                                                            : `bg-transparent ${themeClasses.secondaryText} ${themeClasses.inputBorder} hover:bg-gray-700`}`}
-                                                    >
-                                                        {task}
-                                                    </button>
-                                                );
+                                                return ( <button key={task} type="button" onClick={() => toggleTaskSelection(task)} className={`text-xs px-3 py-2 rounded-lg font-medium transition-all border ${isSelected ? 'bg-green-600 text-white border-green-400 shadow-md transform scale-105' : `bg-transparent ${themeClasses.secondaryText} ${themeClasses.inputBorder} hover:bg-gray-700`}`}> {task} </button> );
                                             })}
-                                            <button 
-                                                type="button"
-                                                onClick={() => toggleTaskSelection("OTHER_CUSTOM_TASK")}
-                                                className={`text-xs px-3 py-2 rounded-lg font-medium transition-all border ${isCustomSelected 
-                                                    ? 'bg-purple-600 text-white border-purple-400 shadow-md' 
-                                                    : `bg-transparent text-purple-300 border-purple-900/50 hover:bg-purple-900/20`}`}
-                                            >
-                                                + Otra
-                                            </button>
+                                            <button type="button" onClick={() => toggleTaskSelection("OTHER_CUSTOM_TASK")} className={`text-xs px-3 py-2 rounded-lg font-medium transition-all border ${isCustomSelected ? 'bg-purple-600 text-white border-purple-400 shadow-md' : `bg-transparent text-purple-300 border-purple-900/50 hover:bg-purple-900/20`}`}> + Otra </button>
                                         </div>
                                     </div>
                                 )}
                             </div>
                         )}
-
-                        {isCustomSelected && isGridOpen && ( 
-                            <input type="text" value={customTaskName} onChange={e => setCustomTaskName(e.target.value)} placeholder="Nombre de la tarea personalizada..." className={`flex-1 px-5 py-3 border-2 ${themeClasses.cardBg} ${themeClasses.secondaryText} ${themeClasses.inputBorder} rounded-full focus:outline-none transition-all animate-pulse`} required /> 
-                        )}
-                        
-                        {isGridOpen && (
-                            <input type="number" value={orderQuantity} onChange={(e) => setOrderQuantity(e.target.value)} placeholder="Cantidad (opcional - aplica a todas)" className={`flex-1 px-5 py-3 border-2 ${themeClasses.cardBg} ${themeClasses.secondaryText} ${themeClasses.inputBorder} rounded-full focus:outline-none transition-all`} />
-                        )}
+                        {isCustomSelected && isGridOpen && ( <input type="text" value={customTaskName} onChange={e => setCustomTaskName(e.target.value)} placeholder="Nombre de la tarea personalizada..." className={`flex-1 px-5 py-3 border-2 ${themeClasses.cardBg} ${themeClasses.secondaryText} ${themeClasses.inputBorder} rounded-full focus:outline-none transition-all animate-pulse`} required /> )}
+                        {isGridOpen && ( <input type="number" value={orderQuantity} onChange={(e) => setOrderQuantity(e.target.value)} placeholder="Cantidad (opcional - aplica a todas)" className={`flex-1 px-5 py-3 border-2 ${themeClasses.cardBg} ${themeClasses.secondaryText} ${themeClasses.inputBorder} rounded-full focus:outline-none transition-all`} /> )}
                     </div>
-
                     {errorMessage && <p className="text-red-400 font-medium bg-red-900/50 p-3 rounded-xl text-center">{errorMessage}</p>}
-                    
-                    <button type="submit" className={`px-6 py-3 rounded-full font-semibold transition duration-300 shadow-lg w-full sm:w-auto ${themeClasses.buttonAdd} disabled:opacity-50 disabled:cursor-not-allowed`} disabled={!shopInput || selectedTasks.length === 0}>
-                        {selectedTasks.length > 1 ? `Agregar ${selectedTasks.length} Tareas` : 'Agregar Tarea'}
-                    </button>
+                    <button type="submit" className={`px-6 py-3 rounded-full font-semibold transition duration-300 shadow-lg w-full sm:w-auto ${themeClasses.buttonAdd} disabled:opacity-50 disabled:cursor-not-allowed`} disabled={!shopInput || selectedTasks.length === 0}> {selectedTasks.length > 1 ? `Agregar ${selectedTasks.length} Tareas` : 'Agregar Tarea'} </button>
                 </form>
             );
         };
@@ -1046,61 +899,34 @@
             if (!isOpen) return null;
             
             const [showOverwriteWarning, setShowOverwriteWarning] = useState(false);
-
             const handleConfirmClick = () => {
                 const reportExists = Array.isArray(pastReports) && pastReports.some(r => r.id === selectedReportDate);
-                if (reportExists) {
-                    setShowOverwriteWarning(true);
-                } else {
-                    onGenerate();
-                }
+                if (reportExists) { setShowOverwriteWarning(true); } else { onGenerate(); }
             };
 
             return (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
                     <div className={`relative w-full max-w-md p-6 rounded-2xl shadow-2xl ${themeClasses.modalBg || 'bg-gray-800 border-gray-600'} border-2 modal-content max-h-[90vh] overflow-y-auto`}>
-                        
                         {showOverwriteWarning ? (
                             <div className="flex flex-col items-center text-center animate-pulse">
                                 <div className="bg-red-500/20 p-4 rounded-full mb-3 border-2 border-red-500">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                    </svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                                 </div>
                                 <h3 className="text-xl font-bold text-red-400 mb-2">¡Cuidado!</h3>
-                                <p className="text-gray-300 mb-6">
-                                    Ya existe un reporte guardado para el día <span className="font-bold text-white">{selectedReportDate}</span>. 
-                                    <br/><br/>
-                                    Si continuas, se borrará la información anterior y se reemplazará con los datos actuales.
-                                </p>
+                                <p className="text-gray-300 mb-6">Ya existe un reporte guardado para el día <span className="font-bold text-white">{selectedReportDate}</span>. <br/><br/>Si continuas, se borrará la información anterior y se reemplazará con los datos actuales.</p>
                                 <div className="flex flex-col gap-3 w-full">
-                                    <button onClick={onGenerate} className="w-full py-3 rounded-xl font-bold text-white bg-red-600 hover:bg-red-700 transition shadow-lg">
-                                        Sí, Sobreescribir
-                                    </button>
-                                    <button onClick={() => setShowOverwriteWarning(false)} className="w-full py-3 rounded-xl font-bold text-gray-300 bg-gray-700 hover:bg-gray-600 transition">
-                                        Cancelar
-                                    </button>
+                                    <button onClick={onGenerate} className="w-full py-3 rounded-xl font-bold text-white bg-red-600 hover:bg-red-700 transition shadow-lg">Sí, Sobreescribir</button>
+                                    <button onClick={() => setShowOverwriteWarning(false)} className="w-full py-3 rounded-xl font-bold text-gray-300 bg-gray-700 hover:bg-gray-600 transition">Cancelar</button>
                                 </div>
                             </div>
                         ) : (
                             <>
                                 <h2 className={`text-xl font-bold mb-4 text-center ${themeClasses.primaryText}`}>Preparar Reporte</h2>
-                                
                                 <div className="mb-6"> 
                                     <label className={`block text-sm font-semibold mb-2 text-center ${themeClasses.secondaryText}`}>Selecciona Fecha del Reporte:</label> 
-                                    <div className="border border-gray-700 rounded-xl overflow-hidden relative">
-                                        <CalendarWidget 
-                                            reports={pastReports} 
-                                            selectedDate={selectedReportDate} 
-                                            onSelectDate={setSelectedReportDate} 
-                                            themeClasses={themeClasses} 
-                                        />
-                                    </div>
-                                    <div className="text-center mt-2 flex justify-center">
-                                        <span className={`text-xs font-mono p-1 rounded bg-gray-900 border border-gray-600 ${themeClasses.accentText}`}>Fecha seleccionada: {selectedReportDate}</span>
-                                    </div>
+                                    <div className="border border-gray-700 rounded-xl overflow-hidden relative"> <CalendarWidget reports={pastReports} selectedDate={selectedReportDate} onSelectDate={setSelectedReportDate} themeClasses={themeClasses} /> </div>
+                                    <div className="text-center mt-2 flex justify-center"> <span className={`text-xs font-mono p-1 rounded bg-gray-900 border border-gray-600 ${themeClasses.accentText}`}>Fecha seleccionada: {selectedReportDate}</span> </div>
                                 </div>
-
                                 <hr className={`border-t ${themeClasses.inputBorder} mb-6 opacity-50`} />
                                 <div className="mb-6"> <SyncTool tasks={tasks} syncTasksTime={syncTasksTime} themeClasses={themeClasses} /> </div>
                                 <div className="flex gap-3 mt-4"> 
@@ -1121,23 +947,13 @@
                      <div className={`relative w-full max-w-sm p-6 rounded-2xl shadow-2xl ${themeClasses.modalBg || 'bg-gray-800 border-gray-600'} border-2 modal-content`}>
                         <div className="flex flex-col items-center text-center animate-pulse">
                             <div className="bg-red-500/20 p-4 rounded-full mb-3 border-2 border-red-500">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                             </div>
                             <h3 className="text-xl font-bold text-red-400 mb-2">¿Empezar Día Nuevo?</h3>
-                            <p className={`${themeClasses.secondaryText || 'text-gray-300'} mb-6 text-sm`}>
-                                Estás a punto de borrar <strong>todas las tareas</strong> de la lista.
-                                <br/><br/>
-                                <span className="text-xs opacity-70">Asegúrate de haber generado tu E.O.D.R. antes de continuar. Esta acción no se puede deshacer.</span>
-                            </p>
+                            <p className={`${themeClasses.secondaryText || 'text-gray-300'} mb-6 text-sm`}>Estás a punto de borrar <strong>todas las tareas</strong> de la lista. <br/><br/> <span className="text-xs opacity-70">Asegúrate de haber generado tu E.O.D.R. antes de continuar. Esta acción no se puede deshacer.</span></p>
                             <div className="flex flex-col gap-3 w-full">
-                                <button onClick={onConfirm} className="w-full py-3 rounded-xl font-bold text-white bg-red-600 hover:bg-red-700 transition shadow-lg">
-                                    Sí, Limpiar Todo
-                                </button>
-                                <button onClick={onClose} className="w-full py-3 rounded-xl font-bold text-gray-300 bg-gray-700 hover:bg-gray-600 transition">
-                                    Cancelar
-                                </button>
+                                <button onClick={onConfirm} className="w-full py-3 rounded-xl font-bold text-white bg-red-600 hover:bg-red-700 transition shadow-lg">Sí, Limpiar Todo</button>
+                                <button onClick={onClose} className="w-full py-3 rounded-xl font-bold text-gray-300 bg-gray-700 hover:bg-gray-600 transition">Cancelar</button>
                             </div>
                         </div>
                      </div>
@@ -1149,109 +965,46 @@
             if (!isOpen) return null;
             
             const [selectedSalaryDates, setSelectedSalaryDates] = useState([]);
-
-            const toggleDate = (date) => {
-                if (selectedSalaryDates.includes(date)) {
-                    setSelectedSalaryDates(prev => prev.filter(d => d !== date));
-                } else {
-                    setSelectedSalaryDates(prev => [...prev, date]);
-                }
-            };
+            const toggleDate = (date) => { if (selectedSalaryDates.includes(date)) { setSelectedSalaryDates(prev => prev.filter(d => d !== date)); } else { setSelectedSalaryDates(prev => [...prev, date]); } };
 
             const handleBatchUpdate = (dates, action) => {
-                if (action === 'add') {
-                    setSelectedSalaryDates(prev => {
-                        const newSet = new Set([...prev, ...dates]);
-                        return Array.from(newSet);
-                    });
-                } else if (action === 'remove') {
-                    setSelectedSalaryDates(prev => prev.filter(d => !dates.includes(d)));
-                }
+                if (action === 'add') { setSelectedSalaryDates(prev => { const newSet = new Set([...prev, ...dates]); return Array.from(newSet); }); } 
+                else if (action === 'remove') { setSelectedSalaryDates(prev => prev.filter(d => !dates.includes(d))); }
             };
 
             const stats = useMemo(() => {
                 let totalHours = 0;
                 let daysCount = 0;
-                
                 selectedSalaryDates.forEach(date => {
                     const report = pastReports.find(r => r.id === date);
-                    if (report) {
-                        const hours = parseHoursFromReport(report.content);
-                        if (hours > 0) {
-                            totalHours += hours;
-                            daysCount++;
-                        }
-                    }
+                    if (report) { const hours = parseHoursFromReport(report.content); if (hours > 0) { totalHours += hours; daysCount++; } }
                 });
-                
                 const totalEarnings = totalHours * (parseFloat(hourlyRate) || 0);
                 return { totalHours, daysCount, totalEarnings };
             }, [selectedSalaryDates, pastReports, hourlyRate]);
 
-            const formatToHoursMinutes = (decimalHours) => {
-                let h = Math.floor(decimalHours);
-                let m = Math.round((decimalHours - h) * 60);
-                if (m === 60) { h++; m = 0; }
-                return `${h}h ${m}m`;
-            };
-
-            const decimalToTimeStr = (decimalHours) => {
-                let h = Math.floor(decimalHours);
-                let m = Math.round((decimalHours - h) * 60);
-                if (m === 60) { h++; m = 0; }
-                return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-            };
+            const formatToHoursMinutes = (decimalHours) => { let h = Math.floor(decimalHours); let m = Math.round((decimalHours - h) * 60); if (m === 60) { h++; m = 0; } return `${h}h ${m}m`; };
+            const decimalToTimeStr = (decimalHours) => { let h = Math.floor(decimalHours); let m = Math.round((decimalHours - h) * 60); if (m === 60) { h++; m = 0; } return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`; };
 
             const handleExportExcel = () => {
-                if (selectedSalaryDates.length === 0) {
-                    alert("Selecciona al menos un día para exportar.");
-                    return;
-                }
-
-                if (typeof XLSX === 'undefined') {
-                    alert("Error: La librería de Excel no se cargó correctamente. Verifica tu conexión.");
-                    return;
-                }
-
+                if (selectedSalaryDates.length === 0) { alert("Selecciona al menos un día para exportar."); return; }
+                if (typeof XLSX === 'undefined') { alert("Error: La librería de Excel no se cargó correctamente. Verifica tu conexión."); return; }
                 const rate = parseFloat(hourlyRate) || 0;
-                
-                // Actualizado: Encabezados claros indicando moneda (USD) y Tiempo
-                const data = [
-                    ["Fecha", "Tiempo Trabajado", "Tarifa por Hora (USD)", "Total (USD)"]
-                ];
-
+                const data = [ ["Fecha", "Tiempo Trabajado", "Tarifa por Hora (USD)", "Total (USD)"] ];
                 const sortedDates = [...selectedSalaryDates].sort();
-
                 sortedDates.forEach(date => {
                     const report = pastReports.find(r => r.id === date);
                     let hours = 0;
                     if (report) hours = parseHoursFromReport(report.content);
                     const earning = hours * rate;
-                    
-                    data.push([
-                        date, 
-                        decimalToTimeStr(hours), // Convertimos decimal a formato HH:MM
-                        rate, 
-                        earning
-                    ]);
+                    data.push([ date, decimalToTimeStr(hours), rate, earning ]);
                 });
-
                 data.push([]); 
-                // Convertir el total de horas decimal a formato tiempo para la fila de totales
                 data.push(["TOTALES", decimalToTimeStr(stats.totalHours), "", stats.totalEarnings]);
-
                 const wb = XLSX.utils.book_new();
                 const ws = XLSX.utils.aoa_to_sheet(data);
-
-                // Ajuste de ancho de columnas para que se vea claro
-                const wscols = [
-                    {wch: 15}, // Fecha
-                    {wch: 20}, // Tiempo Trabajado
-                    {wch: 25}, // Tarifa
-                    {wch: 20}  // Total
-                ];
+                const wscols = [ {wch: 15}, {wch: 20}, {wch: 25}, {wch: 20} ];
                 ws['!cols'] = wscols;
-
                 XLSX.utils.book_append_sheet(wb, ws, "Reporte Salarial");
                 XLSX.writeFile(wb, `Reporte_Salario_${getTodayID()}.xlsx`);
             };
@@ -1260,34 +1013,17 @@
                 <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
                     <div className={`relative w-full max-w-lg p-6 rounded-2xl shadow-2xl border-2 modal-content max-h-[90vh] overflow-y-auto ${themeClasses.modalBg}`}>
                         <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 flex items-center gap-2">
-                                <span className="text-3xl">💰</span> Calculadora Salarial
-                            </h2>
+                            <h2 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 flex items-center gap-2"> <span className="text-3xl">💰</span> Calculadora Salarial </h2>
                             <button onClick={onClose} className={`text-gray-400 hover:${themeClasses.primaryText}`}>✕</button>
                         </div>
-
                         <div className={`mb-6 p-4 rounded-xl border ${themeClasses.itemBg} ${themeClasses.inputBorder}`}>
                             <label className={`block text-sm font-semibold mb-2 ${themeClasses.secondaryText}`}>Tu Tarifa por Hora ($):</label>
-                            <input 
-                                type="number" 
-                                value={hourlyRate} 
-                                onChange={(e) => setHourlyRate(e.target.value)}
-                                className={`w-full px-4 py-3 rounded-lg bg-gray-900 border text-xl font-mono focus:outline-none focus:ring-2 ${themeClasses.inputBorder} ${themeClasses.primaryText}`}
-                                placeholder="Ej: 5.50"
-                            />
+                            <input type="number" value={hourlyRate} onChange={(e) => setHourlyRate(e.target.value)} className={`w-full px-4 py-3 rounded-lg bg-gray-900 border text-xl font-mono focus:outline-none focus:ring-2 ${themeClasses.inputBorder} ${themeClasses.primaryText}`} placeholder="Ej: 5.50" />
                         </div>
-
                         <div className="mb-6">
                             <p className={`text-sm mb-2 ${themeClasses.secondaryText}`}>Selecciona los días a liquidar:</p>
-                            <MultiSelectCalendar 
-                                reports={pastReports} 
-                                selectedDates={selectedSalaryDates} 
-                                onToggleDate={toggleDate} 
-                                onBatchUpdate={handleBatchUpdate}
-                                themeClasses={themeClasses}
-                            />
+                            <MultiSelectCalendar reports={pastReports} selectedDates={selectedSalaryDates} onToggleDate={toggleDate} onBatchUpdate={handleBatchUpdate} themeClasses={themeClasses} />
                         </div>
-
                         <div className="grid grid-cols-2 gap-4 mb-2">
                             <div className={`p-4 rounded-xl border flex flex-col items-center ${themeClasses.itemBg} ${themeClasses.inputBorder}`}>
                                 <span className={`text-xs uppercase tracking-wide ${themeClasses.secondaryText}`}>Horas Totales</span>
@@ -1300,24 +1036,12 @@
                                 <span className="text-3xl font-extrabold text-green-400 mt-1">${stats.totalEarnings.toFixed(2)}</span>
                             </div>
                         </div>
-
-                        {/* NOTA DE ADVERTENCIA */}
                         <div className="mb-4 flex items-start gap-2 p-3 bg-yellow-900/20 border border-yellow-700/50 rounded-lg">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <p className="text-[11px] text-yellow-200/80 leading-tight">
-                                <strong>Nota:</strong> Diferencias de centavos son normales. Úsalo para detectar errores grandes de dinero.
-                            </p>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            <p className="text-[11px] text-yellow-200/80 leading-tight"><strong>Nota:</strong> Diferencias de centavos son normales. Úsalo para detectar errores grandes de dinero.</p>
                         </div>
-
-                        <button 
-                            onClick={handleExportExcel}
-                            className={`w-full py-3 rounded-xl font-bold text-white shadow-lg flex items-center justify-center gap-2 transition-transform active:scale-95 bg-green-700 hover:bg-green-600`}
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                            </svg>
+                        <button onClick={handleExportExcel} className={`w-full py-3 rounded-xl font-bold text-white shadow-lg flex items-center justify-center gap-2 transition-transform active:scale-95 bg-green-700 hover:bg-green-600`}>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                             Exportar a Excel
                         </button>
                     </div>
@@ -1327,67 +1051,35 @@
 
         const FloatingSalaryButton = ({ onClick }) => {
             const [showBadge, setShowBadge] = useState(true);
-
-            useEffect(() => {
-                const timer = setTimeout(() => setShowBadge(false), 10000); 
-                return () => clearTimeout(timer);
-            }, []);
-
+            useEffect(() => { const timer = setTimeout(() => setShowBadge(false), 10000); return () => clearTimeout(timer); }, []);
             return (
                 <div className="fixed bottom-4 left-4 sm:bottom-6 sm:left-6 z-50 group">
-                    {showBadge && (
-                        <div className="absolute -top-3 -right-4 bg-red-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-lg wiggle-animation z-50 border-2 border-white tracking-widest transition-opacity duration-1000">
-                            ¡NUEVO!
-                        </div>
-                    )}
-                    
-                    <button 
-                        onClick={onClick}
-                        className="relative w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-green-600 hover:bg-green-500 text-white shadow-2xl flex items-center justify-center border-4 border-gray-900 transition-transform duration-300 active:scale-95 hover:scale-110 overflow-hidden"
-                        title="Calcular Salario"
-                    >
-                        <div className="shine-bar"></div>
-                        <span className="text-xl sm:text-3xl font-bold relative z-10">$</span>
-                    </button>
+                    {showBadge && ( <div className="absolute -top-3 -right-4 bg-red-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-lg wiggle-animation z-50 border-2 border-white tracking-widest transition-opacity duration-1000"> ¡NUEVO! </div> )}
+                    <button onClick={onClick} className="relative w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-green-600 hover:bg-green-500 text-white shadow-2xl flex items-center justify-center border-4 border-gray-900 transition-transform duration-300 active:scale-95 hover:scale-110 overflow-hidden" title="Calcular Salario"> <div className="shine-bar"></div> <span className="text-xl sm:text-3xl font-bold relative z-10">$</span> </button>
                 </div>
             );
         };
+        // #endregion
 
+        // #region MAIN APP LOGIC
         const App = () => {
-            // Utilizamos el Hook "Factoría" para obtener el tema y mensaje
             const { strategy, message } = useThemeManager(birthdaysList);
-            
-            // Extraemos clases del tema seleccionado
             const themeClasses = strategy;
 
             const { tasks, errorMessage, setErrorMessage, addTask, deleteTask, deleteAllTasks, toggleTimer, updateTaskDetails, sortTasksByShop, resetTaskTimer, stopAllTimers, statusMessage, resumeStoppedTimers, clearStatusMessage, syncTasksTime } = useTasks();
             const [pastReports, setPastReports] = usePersistentState('reports', []);
             const [reportOutput, setReportOutput] = useState('');
             const [calendarSelectedDate, setCalendarSelectedDate] = useState(getTodayID());
-            
             const [isReportModalOpen, setIsReportModalOpen] = useState(false);
             const [selectedReportDate, setSelectedReportDate] = useState(getTodayID());
-
             const [isSalaryModalOpen, setIsSalaryModalOpen] = useState(false);
             const [hourlyRate, setHourlyRate] = usePersistentState('hourlyRate', '');
-
             const [isDeleteAllModalOpen, setIsDeleteAllModalOpen] = useState(false);
 
-            // Aplicar fondo al body dinámicamente según el tema
-            useEffect(() => { 
-                document.getElementById('root').style.zIndex = '10'; 
-                document.body.className = `${themeClasses.bodyBg} transition-colors duration-500`; 
-            }, [themeClasses]);
-
-            useEffect(() => {
-                if (statusMessage && statusMessage.taskIdToResume === null) {
-                    const timer = setTimeout(() => { clearStatusMessage(); }, 8000);
-                    return () => clearTimeout(timer);
-                }
-            }, [statusMessage, clearStatusMessage]);
+            useEffect(() => { document.getElementById('root').style.zIndex = '10'; document.body.className = `${themeClasses.bodyBg} transition-colors duration-500`; }, [themeClasses]);
+            useEffect(() => { if (statusMessage && statusMessage.taskIdToResume === null) { const timer = setTimeout(() => { clearStatusMessage(); }, 8000); return () => clearTimeout(timer); } }, [statusMessage, clearStatusMessage]);
             
             const handleGenerateReportClick = () => { setIsReportModalOpen(true); };
-
             const confirmGenerateReport = () => {
                 const reportContent = generateEODRContent(tasks, selectedReportDate);
                 setReportOutput(reportContent);
@@ -1404,67 +1096,40 @@
 
             const cardGlowClass = themeClasses.name === 'halloween' ? 'glow-card' : (themeClasses.name === 'party' || themeClasses.name === 'biancaBday') ? 'party-glow-card' : '';
             const hasRunningTask = tasks.some(t => t.running);
-            const selectedReportContent = useMemo(() => {
-                const found = pastReports.find(r => r.id === calendarSelectedDate);
-                return found ? found.content : null;
-            }, [pastReports, calendarSelectedDate]);
+            const selectedReportContent = useMemo(() => { const found = pastReports.find(r => r.id === calendarSelectedDate); return found ? found.content : null; }, [pastReports, calendarSelectedDate]);
 
             return (
                 <>
                     <GlobalStatusMessage message={statusMessage} resumeAction={resumeStoppedTimers} dismissAction={clearStatusMessage} />
-                    
                     <ReportConfigModal isOpen={isReportModalOpen} onClose={() => setIsReportModalOpen(false)} onGenerate={confirmGenerateReport} tasks={tasks} syncTasksTime={syncTasksTime} themeClasses={themeClasses} selectedReportDate={selectedReportDate} setSelectedReportDate={setSelectedReportDate} pastReports={pastReports} />
-                    
                     <SalaryCalculatorModal isOpen={isSalaryModalOpen} onClose={() => setIsSalaryModalOpen(false)} pastReports={pastReports} hourlyRate={hourlyRate} setHourlyRate={setHourlyRate} themeClasses={themeClasses} />
-
                     <DeleteAllConfirmationModal isOpen={isDeleteAllModalOpen} onClose={() => setIsDeleteAllModalOpen(false)} onConfirm={() => { deleteAllTasks(); setIsDeleteAllModalOpen(false); }} themeClasses={themeClasses} />
-                    
                     <FloatingSalaryButton onClick={() => setIsSalaryModalOpen(true)} />
 
                     <div className={`max-w-xl w-11/12 mx-auto rounded-2xl shadow-xl p-8 pt-12 transition-colors duration-500 ${themeClasses.cardBg} max-h-[95vh] overflow-y-auto hide-scrollbar relative ${cardGlowClass}`}>
-                        {/* Renderizar componente de fondo (Telaraña) si está en activeEffects */}
                         {themeClasses.activeEffects.includes('spiderweb') && <SpiderWeb />}
-                        
                         <div className="relative space-y-6"> 
                             <Title themeClasses={themeClasses} celebrationMessage={message} />
                             <TaskInputForm {...{ addTask, errorMessage, setErrorMessage, themeClasses }} />
-                            
                             <div className="space-y-4">
                                 <hr className={`border-t ${themeClasses.inputBorder}`} />
                                 <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
                                     <button type="button" onClick={sortTasksByShop} className="bg-gray-600 text-white px-4 py-2 text-sm rounded-full font-semibold hover:bg-gray-700 transition duration-300 shadow-lg w-full sm:w-auto">Ordenar por Tienda</button>
-                                    
-                                    <button type="button" onClick={() => setIsDeleteAllModalOpen(true)} className="bg-red-800 hover:bg-red-900 text-white px-4 py-2 text-sm rounded-full font-semibold transition duration-300 shadow-lg w-full sm:w-auto flex items-center justify-center gap-2">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
-                                        Limpiar Todo
-                                    </button>
-
-                                    {hasRunningTask && (
-                                        <button type="button" onClick={stopAllTimers} className={`bg-purple-700 hover:bg-purple-800 text-white px-4 py-2 text-sm rounded-full font-semibold transition duration-300 shadow-lg w-full sm:w-auto`} title="Detener todos los cronómetros activos">Detener Tareas</button>
-                                    )}
+                                    <button type="button" onClick={() => setIsDeleteAllModalOpen(true)} className="bg-red-800 hover:bg-red-900 text-white px-4 py-2 text-sm rounded-full font-semibold transition duration-300 shadow-lg w-full sm:w-auto flex items-center justify-center gap-2"> <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg> Limpiar Todo </button>
+                                    {hasRunningTask && ( <button type="button" onClick={stopAllTimers} className={`bg-purple-700 hover:bg-purple-800 text-white px-4 py-2 text-sm rounded-full font-semibold transition duration-300 shadow-lg w-full sm:w-auto`} title="Detener todos los cronómetros activos">Detener Tareas</button> )}
                                 </div>
-
                                 <div className="max-h-[35vh] overflow-y-auto task-scroll pr-2 space-y-3">
-                                    {tasks.length > 0 ? tasks.map((task) => (
-                                        <TaskListItem key={task.id} task={task} toggleTimer={toggleTimer} deleteTask={deleteTask} updateTaskDetails={updateTaskDetails} themeClasses={themeClasses} resetTaskTimer={resetTaskTimer} celebrationThemeName={themeClasses.name} />
-                                    )) : (<p className={`text-center italic ${themeClasses.secondaryText}`}>No hay tareas. ¡Añade algunas para empezar!</p>)}
+                                    {tasks.length > 0 ? tasks.map((task) => ( <TaskListItem key={task.id} task={task} toggleTimer={toggleTimer} deleteTask={deleteTask} updateTaskDetails={updateTaskDetails} themeClasses={themeClasses} resetTaskTimer={resetTaskTimer} celebrationThemeName={themeClasses.name} /> )) : (<p className={`text-center italic ${themeClasses.secondaryText}`}>No hay tareas. ¡Añade algunas para empezar!</p>)}
                                 </div>
                             </div>
-                            
                             <div className="flex flex-col items-center w-full">
                                 <button type="button" onClick={handleGenerateReportClick} className={`px-6 py-3 rounded-full font-semibold transition duration-300 shadow-lg mb-4 ${themeClasses.buttonAction}`}>Generar E.O.D.R.</button>
-                                
                                 <ReportViewer content={reportOutput} themeClasses={themeClasses} placeholder="El reporte aparecerá aquí..." />
                             </div>
-                            
                             <hr className={`border-t ${themeClasses.inputBorder}`} />
-                            
                             <div className="space-y-4">
                                 <h2 className={`text-2xl font-bold text-center ${themeClasses.primaryText}`}>Calendario de Reportes</h2>
                                 <CalendarWidget reports={pastReports} selectedDate={calendarSelectedDate} onSelectDate={setCalendarSelectedDate} themeClasses={themeClasses} />
-                                
                                 <h3 className={`font-bold mb-2 ${themeClasses.accentText}`}>Reporte del: {calendarSelectedDate}</h3>
                                 <ReportViewer content={selectedReportContent} themeClasses={themeClasses} placeholder="No hay reporte guardado para este día." />
                             </div>
@@ -1474,27 +1139,20 @@
             );
         };
         
-        /**
-         * COMPOSICIÓN: ThemeWrapper actúa como el 'Cliente' que utiliza la estrategia seleccionada.
-         * Renderiza dinámicamente los efectos de fondo basándose en la lista `activeEffects` de la estrategia.
-         */
         const ThemeWrapper = () => {
             const { strategy } = useThemeManager(birthdaysList);
-            
             return (
                 <>
-                    {/* Renderizado dinámico de efectos basado en la estrategia actual */}
                     {strategy.activeEffects.map(effectKey => {
                         const EffectComponent = EFFECT_COMPONENTS[effectKey];
-                        // Ignoramos spiderweb aquí porque se renderiza dentro del contenedor principal por CSS position relative
                         if (effectKey === 'spiderweb') return null; 
                         return EffectComponent ? <EffectComponent key={effectKey} /> : null;
                     })}
-                    
                     <App />
                 </>
             );
         }
+        // #endregion
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<ThemeWrapper />);
