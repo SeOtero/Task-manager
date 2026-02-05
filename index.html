@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Task Manager TL</title>
+    <title>Task Manager - Powered by LofiDex</title>
     <!-- Dependencies -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -12,7 +12,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&family=Creepster&family=Mountains+of+Christmas:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&family=Creepster&family=Mountains+of+Christmas:wght@700&family=VT323&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
     
     <style>
         /* #region GLOBAL STYLES & ANIMATIONS */
@@ -25,6 +25,8 @@
         }
         .font-creepster { font-family: 'Creepster', cursive; }
         .font-christmas { font-family: 'Mountains of Christmas', cursive; }
+        .font-retro { font-family: 'VT323', monospace; } 
+        .font-lofidex { font-family: 'Quicksand', sans-serif; }
     
         .app-container {
             min-height: 100vh;
@@ -66,129 +68,43 @@
             overflow: hidden;
             border: 1px solid rgba(120, 80, 150, 0.5);
         }
+
+        /* Sunset/Dusk Animation for Lo-Fi (Original Design) */
+        @keyframes sunset-shift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .bg-sunset-animation {
+            background: linear-gradient(270deg, #2e1065, #4c1d95, #c026d3, #be185d, #1e1b4b);
+            background-size: 800% 800%;
+            animation: sunset-shift 30s ease infinite;
+        }
         
-        /* Specific Visual Effects */
-        @keyframes particle-drift-and-fade {
-            0% { transform: translate(0, 0) scale(0.8); opacity: 0; }
-            25% { transform: translate(calc(var(--rand-x) * 0.25px), 25vh) scale(1); opacity: 0.5; }
-            50% { transform: translate(calc(var(--rand-x) * 1.2px), 50vh) scale(1.1); opacity: 0.3; }
-            75% { transform: translate(calc(var(--rand-x) * 0.5px), 75vh) scale(0.9); opacity: 0.1; }
-            100% { transform: translate(calc(var(--rand-x) * 0.1px), 100vh) scale(0.5); opacity: 0; }
+        /* Rain Animation for Lo-Fi */
+        @keyframes rain-fall {
+            0% { transform: translateY(-10vh); }
+            100% { transform: translateY(110vh); }
         }
-        .particle {
-            position: fixed; top: -10px; background-color: rgba(255, 165, 0, 0.4); 
-            border-radius: 50%; box-shadow: 0 0 5px rgba(255, 165, 0, 0.6); 
-            pointer-events: none; z-index: 1; 
-        }
-        .animate-particle { animation: particle-drift-and-fade var(--duration) linear infinite; }
-        
-        @keyframes confetti-fall {
-            0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
-        }
-        .confetti {
-            position: fixed; top: 0; pointer-events: none; z-index: 1;
-            animation: confetti-fall var(--duration) linear infinite;
+        .rain-drop {
+            position: fixed; top: 0; width: 1px; height: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            pointer-events: none; z-index: 1;
+            animation: rain-fall var(--duration) linear infinite;
             animation-delay: var(--delay);
         }
 
-        .spider-web {
-            position: absolute; top: 0; left: 0; width: 150px; height: 150px;
-            pointer-events: none; z-index: 2; opacity: 0.5;
-        }
-        .spider-web:before, .spider-web:after {
-            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            border-radius: 50%; border: 2px solid rgba(150, 150, 150, 0.4); 
-            box-sizing: border-box; mix-blend-mode: screen;
-        }
-        .spider-web:before {
-            transform: rotate(45deg) scaleX(0.5) translate(-10%, 10%);
-            border-radius: 0; border-top: none; border-right: none;
-            clip-path: polygon(0 0, 100% 0, 100% 50%, 0% 100%);
-        }
-        .spider-web:after {
-            transform: rotate(-45deg) scaleX(0.5) translate(-10%, -10%);
-            border-radius: 0; border-top: none; border-left: none;
-            clip-path: polygon(100% 0, 0 0, 0 50%, 100% 100%);
-        }
-        .spider-web .line1, .spider-web .line2 {
-            content: ''; position: absolute; background: rgba(150, 150, 150, 0.4);
-        }
-        .spider-web .line1 { width: 120px; height: 2px; top: 0; left: 0; transform-origin: top left; transform: rotate(25deg); }
-        .spider-web .line2 { width: 120px; height: 2px; top: 0; left: 0; transform-origin: top left; transform: rotate(-25deg); }
-
-        @keyframes snowfall {
-            0% { transform: translateY(-10vh) translateX(0); }
-            100% { transform: translateY(110vh) translateX(calc(var(--drift) * 15vw)); }
-        }
-        .snowflake {
-            position: fixed; top: 0; background: white; border-radius: 50%;
-            pointer-events: none; z-index: 1; opacity: 0.8;
-            box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
-            animation: snowfall var(--duration) linear infinite;
-            animation-delay: var(--delay);
-        }
-
-        @keyframes twinkle {
-            0%, 100% { opacity: 0.6; transform: scale(0.9); }
-            50% { opacity: 1; transform: scale(1.1); }
-        }
-        .christmas-light {
-            position: fixed; border-radius: 50%;
-            animation: twinkle var(--duration) ease-in-out infinite alternate;
-            z-index: 1; pointer-events: none;
-        }
-
-        @keyframes float-ghost {
-            0% { transform: translate(var(--start-x), 100vh) scale(1); opacity: 0; }
-            20% { opacity: 0.6; }
-            80% { opacity: 0.6; }
-            100% { transform: translate(var(--end-x), -20vh) scale(1.1); opacity: 0; }
-        }
-        .ghost {
-            position: fixed; bottom: -150px; z-index: 1;
-            pointer-events: none;
-            animation: float-ghost var(--duration) ease-in-out infinite;
-            animation-delay: var(--delay);
-            fill: rgba(255, 255, 255, 0.1);
-            filter: drop-shadow(0 0 15px rgba(200, 220, 255, 0.6));
-        }
-        
-        @keyframes magic-float {
-            0% { transform: translateY(110vh) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
-        }
-        .magic-particle {
-            position: fixed; top: 0; pointer-events: none; z-index: 1;
-            animation: magic-float var(--duration) linear infinite;
-            animation-delay: var(--delay);
-        }
-        
-        @keyframes modal-pop {
-            0% { transform: scale(0.9); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        .modal-content {
-            animation: modal-pop 0.3s ease-out forwards;
-        }
-
-        @keyframes wiggle-badge {
-            0%, 100% { transform: rotate(-5deg); }
-            50% { transform: rotate(5deg); }
-        }
-        .wiggle-animation {
-            animation: wiggle-badge 1s ease-in-out infinite;
-        }
-
-        @keyframes shine-sweep {
-            0% { transform: translateX(-150%) skewX(-25deg); }
-            100% { transform: translateX(150%) skewX(-25deg); }
-        }
-        .shine-bar {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(to right, transparent, rgba(255,255,255,0.7), transparent);
-            animation: shine-sweep 3s infinite ease-in-out;
-        }
+        /* Otras animaciones */
+        @keyframes particle-drift-and-fade { 0% { transform: translate(0, 0) scale(0.8); opacity: 0; } 100% { transform: translate(calc(var(--rand-x) * 0.1px), 100vh) scale(0.5); opacity: 0; } } .particle { position: fixed; top: -10px; background-color: rgba(255, 165, 0, 0.4); border-radius: 50%; pointer-events: none; z-index: 1; } .animate-particle { animation: particle-drift-and-fade var(--duration) linear infinite; }
+        @keyframes confetti-fall { 0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(110vh) rotate(720deg); opacity: 0; } } .confetti { position: fixed; top: 0; pointer-events: none; z-index: 1; animation: confetti-fall var(--duration) linear infinite; animation-delay: var(--delay); }
+        .spider-web { position: absolute; top: 0; left: 0; width: 150px; height: 150px; pointer-events: none; z-index: 2; opacity: 0.5; } .spider-web:before, .spider-web:after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; border: 2px solid rgba(150, 150, 150, 0.4); box-sizing: border-box; mix-blend-mode: screen; } .spider-web:before { transform: rotate(45deg) scaleX(0.5) translate(-10%, 10%); border-radius: 0; border-top: none; border-right: none; clip-path: polygon(0 0, 100% 0, 100% 50%, 0% 100%); } .spider-web:after { transform: rotate(-45deg) scaleX(0.5) translate(-10%, -10%); border-radius: 0; border-top: none; border-left: none; clip-path: polygon(100% 0, 0 0, 0 50%, 100% 100%); } .spider-web .line1, .spider-web .line2 { content: ''; position: absolute; background: rgba(150, 150, 150, 0.4); } .spider-web .line1 { width: 120px; height: 2px; top: 0; left: 0; transform-origin: top left; transform: rotate(25deg); } .spider-web .line2 { width: 120px; height: 2px; top: 0; left: 0; transform-origin: top left; transform: rotate(-25deg); }
+        @keyframes snowfall { 0% { transform: translateY(-10vh) translateX(0); } 100% { transform: translateY(110vh) translateX(calc(var(--drift) * 15vw)); } } .snowflake { position: fixed; top: 0; background: white; border-radius: 50%; pointer-events: none; z-index: 1; opacity: 0.8; box-shadow: 0 0 8px rgba(255, 255, 255, 0.6); animation: snowfall var(--duration) linear infinite; animation-delay: var(--delay); }
+        @keyframes twinkle { 0%, 100% { opacity: 0.6; transform: scale(0.9); } 50% { opacity: 1; transform: scale(1.1); } } .christmas-light { position: fixed; border-radius: 50%; animation: twinkle var(--duration) ease-in-out infinite alternate; z-index: 1; pointer-events: none; }
+        @keyframes float-ghost { 0% { transform: translate(var(--start-x), 100vh) scale(1); opacity: 0; } 20% { opacity: 0.6; } 80% { opacity: 0.6; } 100% { transform: translate(var(--end-x), -20vh) scale(1.1); opacity: 0; } } .ghost { position: fixed; bottom: -150px; z-index: 1; pointer-events: none; animation: float-ghost var(--duration) ease-in-out infinite; animation-delay: var(--delay); fill: rgba(255, 255, 255, 0.1); filter: drop-shadow(0 0 15px rgba(200, 220, 255, 0.6)); }
+        @keyframes magic-float { 0% { transform: translateY(110vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; } } .magic-particle { position: fixed; top: 0; pointer-events: none; z-index: 1; animation: magic-float var(--duration) linear infinite; animation-delay: var(--delay); }
+        @keyframes modal-pop { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } } .modal-content { animation: modal-pop 0.3s ease-out forwards; }
+        @keyframes wiggle-badge { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } } .wiggle-animation { animation: wiggle-badge 1s ease-in-out infinite; }
+        @keyframes shine-sweep { 0% { transform: translateX(-150%) skewX(-25deg); } 100% { transform: translateX(150%) skewX(-25deg); } } .shine-bar { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to right, transparent, rgba(255,255,255,0.7), transparent); animation: shine-sweep 3s infinite ease-in-out; }
         /* #endregion */
     </style>
 </head>
@@ -197,7 +113,7 @@
     <div id="root" class="app-container"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useMemo, useCallback } = React;
+        const { useState, useEffect, useMemo, useCallback, useRef } = React;
 
         // #region CONSTANTS & DATA
         const birthdaysList = [
@@ -209,11 +125,13 @@
             { name: "Angie", date: "11-19" }, 
             { name: "Dana", date: "08-28" },
             { name: "Luciano", date: "07-07" },
-            {  },
+            { name: "Iliana", date: "12-27" },
+            { name: "Valentina", date: "09-03" },
         ];
         
         const shopOptions = ["Tienda Lujosa", "Clara Tienda", "Clara Tierra", "Bella Divina"];
         const CLARA_TIENDA_TASK_NAME = "Órdenes / Tarea Única";
+        const LOFI_UNLOCK_HOURS = 10; 
         
         const commonTaskOptions = [
             "Columna CONFIRMADO", "Columna POR UPSELL", "Columna DATOS ENTREGA", 
@@ -243,6 +161,51 @@
                 modalBg: 'bg-gray-800 border-gray-600',
                 activeEffects: [],
                 iconPair: null
+            },
+            lofi: {
+                name: 'lofi',
+                bodyBg: 'bg-sunset-animation', // Diseño original recuperado
+                cardBg: 'bg-black/40 backdrop-blur-md border border-white/10 shadow-2xl', 
+                itemBg: 'bg-black/30 border border-white/5', 
+                primaryText: 'text-indigo-100', 
+                secondaryText: 'text-indigo-200/70', 
+                accentText: 'text-orange-300', 
+                buttonAdd: 'bg-indigo-600/80 hover:bg-indigo-500 text-white', 
+                buttonAction: 'bg-orange-500/80 hover:bg-orange-400 text-white', 
+                inputBorder: 'border-indigo-300/30 focus:ring-indigo-400', 
+                shopSelectBorder: 'border-orange-300/50 focus:ring-orange-400', 
+                titleFont: 'font-retro tracking-widest text-2xl', 
+                calendarActive: 'bg-indigo-500 text-white font-bold', 
+                calendarDot: 'bg-orange-400', 
+                modalBg: 'bg-slate-900/90 border-indigo-500',
+                activeEffects: ['rain'],
+                iconPair: ['🎧', '🌇'] // Iconos del diseño original
+            },
+            crimson: {
+                name: 'crimson',
+                bodyBg: 'bg-red-950', 
+                cardBg: 'bg-red-900/30 backdrop-blur-sm border border-red-800 shadow-[0_0_30px_rgba(153,27,27,0.3)]', 
+                itemBg: 'bg-red-900/40 border-l-4 border-red-600', 
+                primaryText: 'text-red-100', secondaryText: 'text-red-300', accentText: 'text-white', 
+                buttonAdd: 'bg-red-700 hover:bg-red-600 text-white', buttonAction: 'bg-red-800 hover:bg-red-700 text-white border border-red-500', 
+                inputBorder: 'border-red-700 focus:ring-red-500', shopSelectBorder: 'border-red-500 focus:ring-red-400', 
+                titleFont: 'font-bold uppercase tracking-widest', calendarActive: 'bg-red-600 text-white', calendarDot: 'bg-white', 
+                modalBg: 'bg-red-950 border-red-600',
+                activeEffects: [],
+                iconPair: ['🔴', '⚫']
+            },
+            neon: {
+                name: 'neon',
+                bodyBg: 'bg-black', 
+                cardBg: 'bg-gray-900 border-2 border-green-400 shadow-[0_0_15px_rgba(74,222,128,0.5)]', 
+                itemBg: 'bg-black border border-pink-500', 
+                primaryText: 'text-green-400 font-mono', secondaryText: 'text-pink-400 font-mono', accentText: 'text-yellow-300 font-mono', 
+                buttonAdd: 'bg-black border border-green-400 text-green-400 hover:bg-green-400 hover:text-black font-mono', buttonAction: 'bg-black border border-pink-500 text-pink-500 hover:bg-pink-500 hover:text-black font-mono', 
+                inputBorder: 'border-green-500 focus:ring-green-300', shopSelectBorder: 'border-pink-500 focus:ring-pink-300', 
+                titleFont: 'font-retro text-3xl', calendarActive: 'bg-green-500 text-black font-bold', calendarDot: 'bg-pink-500', 
+                modalBg: 'bg-black border-2 border-green-500',
+                activeEffects: [],
+                iconPair: ['🟢', '👾']
             },
             valentines: { 
                 name: 'valentines',
@@ -300,9 +263,8 @@
                 iconPair: ['🦄', '🐱']
             }
         };
-        // #endregion
 
-        // #region VISUAL COMPONENTS (EFFECTS)
+        // --- VISUAL COMPONENTS ---
         const BackgroundParticles = () => { const particles = useMemo(() => Array.from({ length: 80 }).map((_, i) => ({ key: i, left: `${Math.random() * 100}vw`, size: `${2 + Math.random() * 5}px`, duration: `${20 + Math.random() * 20}s`, delay: `${Math.random() * 15}s`, randX: `${(Math.random() - 0.5) * 350}` })), []); return (<div className="w-full h-full absolute top-0 left-0">{particles.map(p => <div key={p.key} className="particle animate-particle" style={{ left: p.left, width: p.size, height: p.size, '--duration': p.duration, '--rand-x': p.randX, animationDelay: p.delay }} />)}</div>); };
         const BackgroundConfetti = () => { const confettiPieces = useMemo(() => { const colors = ['#f43f5e', '#ec4899', '#8b5cf6', '#38bdf8']; return Array.from({ length: 100 }).map((_, i) => { const size = Math.random() * 8 + 4; const isSquare = Math.random() > 0.5; return { key: i, left: `${Math.random() * 100}vw`, width: `${size}px`, height: `${size}px`, backgroundColor: colors[Math.floor(Math.random() * colors.length)], borderRadius: isSquare ? '2px' : '50%', transform: `rotate(${Math.random() * 360}deg)`, '--duration': `${Math.random() * 5 + 5}s`, '--delay': `${Math.random() * 5}s` }; }); }, []); return (<div className="w-full h-full absolute top-0 left-0 overflow-hidden">{confettiPieces.map(style => <div key={style.key} className="confetti" style={style} />)}</div>); };
         const BackgroundSnow = () => { const snowflakes = useMemo(() => Array.from({ length: 150 }).map((_, i) => { const size = Math.random() * 4 + 2; return { key: i, left: `${Math.random() * 100}vw`, width: `${size}px`, height: `${size}px`, '--duration': `${Math.random() * 10 + 10}s`, '--delay': `${Math.random() * 10}s`, '--drift': Math.random() - 0.5 }; }), []); return (<div className="w-full h-full absolute top-0 left-0 overflow-hidden">{snowflakes.map(style => <div key={style.key} className="snowflake" style={style} />)}</div>); };
@@ -310,7 +272,36 @@
         const BackgroundGhost = () => { const ghosts = useMemo(() => Array.from({ length: 5 }).map((_, i) => ({ key: i, '--duration': `${Math.random() * 15 + 10}s`, '--delay': `${Math.random() * 10}s`, '--start-x': `${Math.random() * 80 + 10}vw`, '--end-x': `${Math.random() * 80 + 10}vw`, width: `${Math.random() * 50 + 50}px` })), []); return (<div className="w-full h-full absolute top-0 left-0 overflow-hidden">{ghosts.map(style => (<svg key={style.key} className="ghost" style={style} viewBox="0 0 100 125"><path d="M10 115 C 10 115, 10 95, 20 95 C 30 95, 30 115, 30 115 C 30 115, 30 95, 40 95 C 50 95, 50 115, 50 115 C 50 115, 50 95, 60 95 C 70 95, 70 115, 70 115 C 70 115, 70 95, 80 95 C 90 95, 90 115, 90 115 L 90 60 C 90 20, 50 10, 50 10 C 50 10, 10 20, 10 60 Z M 30 60 C 35 60, 35 50, 30 50 C 25 50, 25 60, 30 60 Z M 70 60 C 75 60, 75 50, 70 50 C 65 50, 65 60, 70 60 Z" /></svg>))}</div>); };
         const BackgroundMagic = () => { const particles = useMemo(() => { const emojis = ['🦄', '🐱', '✨', '💜', '❤️', '💖']; return Array.from({ length: 100 }).map((_, i) => { return { key: i, left: `${Math.random() * 100}vw`, fontSize: `${Math.random() * 1.5 + 0.75}rem`, opacity: Math.random() * 0.5 + 0.5, emoji: emojis[i % emojis.length], '--duration': `${Math.random() * 10 + 8}s`, '--delay': `${Math.random() * 8}s` }; }); }, []); return (<div className="w-full h-full absolute top-0 left-0 overflow-hidden">{particles.map(style => <div key={style.key} className="magic-particle" style={style}>{style.emoji}</div>)}</div>); };
         const BackgroundHearts = () => { const hearts = useMemo(() => { const emojis = ['❤️', '💖', '💘', '💝', '💓', '🌹']; return Array.from({ length: 50 }).map((_, i) => ({ key: i, left: `${Math.random() * 100}vw`, fontSize: `${Math.random() * 1.5 + 1}rem`, opacity: Math.random() * 0.5 + 0.3, emoji: emojis[i % emojis.length], '--duration': `${Math.random() * 5 + 5}s`, '--delay': `${Math.random() * 5}s` })); }, []); return (<div className="w-full h-full absolute top-0 left-0 overflow-hidden">{hearts.map(style => <div key={style.key} className="magic-particle" style={style}>{style.emoji}</div>)}</div>); };
+        const BackgroundRain = () => { const drops = useMemo(() => Array.from({ length: 60 }).map((_, i) => ({ key: i, left: `${Math.random() * 100}vw`, height: `${Math.random() * 20 + 10}px`, duration: `${Math.random() * 0.5 + 0.5}s`, delay: `${Math.random() * 2}s` })), []); return (<div className="w-full h-full absolute top-0 left-0 overflow-hidden">{drops.map(d => <div key={d.key} className="rain-drop" style={{ left: d.left, height: d.height, '--duration': d.duration, '--delay': d.delay }} />)}</div>); };
         const SpiderWeb = () => { return (<><div className="spider-web"><div className="line1"></div><div className="line2"></div></div><div className="spider-web" style={{ left: 'auto', right: 0, transform: 'scaleX(-1)' }}><div className="line1"></div><div className="line2"></div></div></>); };
+
+        const BackgroundAudio = () => {
+            const audioRef = useRef(null);
+            const [isPlaying, setIsPlaying] = useState(false);
+            
+            const toggleAudio = () => {
+                if (audioRef.current) {
+                    if (isPlaying) { audioRef.current.pause(); } 
+                    else { audioRef.current.play().catch(e => console.log("Audio play failed (user interaction needed)", e)); }
+                    setIsPlaying(!isPlaying);
+                }
+            };
+
+            return (
+                <div className="fixed top-4 right-4 z-50">
+                    <audio ref={audioRef} loop src="https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3" />
+                    <button onClick={toggleAudio} className="bg-black/50 hover:bg-black/70 text-white p-2 rounded-full backdrop-blur-md border border-white/20 transition-all shadow-lg group hover:scale-110 active:scale-95 duration-300">
+                        {/* ICONO FLOTANTE DE MÚSICA - IMAGEN ÚNICA (0YBh5gg) RELLENANDO CÍRCULO */}
+                        <div className="relative w-10 h-10 flex items-center justify-center rounded-full overflow-hidden">
+                            <img src="https://i.imgur.com/0YBh5gg.png" alt="LofiDex Cup" className={`w-full h-full object-cover ${isPlaying ? 'animate-pulse' : 'opacity-80 grayscale'}`} 
+                                 onError={(e) => {e.target.onerror = null; e.target.src = "https://placehold.co/100x100?text=☕";}}
+                            />
+                            {!isPlaying && <div className="absolute inset-0 flex items-center justify-center text-white font-bold text-xs bg-black/40 rounded-full">OFF</div>}
+                        </div>
+                    </button>
+                </div>
+            );
+        };
 
         const EFFECT_COMPONENTS = {
             'particles': BackgroundParticles,
@@ -320,6 +311,7 @@
             'lights': BackgroundChristmasLights,
             'magic': BackgroundMagic,
             'hearts': BackgroundHearts,
+            'rain': BackgroundRain,
             'spiderweb': SpiderWeb
         };
         // #endregion
@@ -355,6 +347,25 @@
              return `${year}-${month}-${day}`;
         };
 
+        const getWeeklyHours = (reports) => {
+            if (!reports || reports.length === 0) return 0;
+            const now = new Date();
+            const startOfWeek = new Date(now);
+            const day = startOfWeek.getDay(); 
+            const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1); 
+            startOfWeek.setDate(diff);
+            startOfWeek.setHours(0, 0, 0, 0);
+
+            return reports.reduce((acc, r) => {
+                const [y, m, d] = r.id.split('-').map(Number);
+                const rDate = new Date(y, m - 1, d);
+                if (rDate >= startOfWeek) {
+                    return acc + parseHoursFromReport(r.content);
+                }
+                return acc;
+            }, 0);
+        };
+
         const generateEODRContent = (tasks, reportDate, themeName) => {
             let totalMilliseconds = 0;
             const tasksByShop = tasks.reduce((acc, task) => {
@@ -366,8 +377,7 @@
                 return acc;
             }, {});
 
-            // Prefijo condicional solo para San Valentín
-            const taskPrefix = themeName === 'valentines' ? '💖 ' : '';
+            const taskPrefix = themeName === 'valentines' ? '💖 ' : themeName === 'lofi' ? '☕ ' : '';
 
             let formattedReport = [];
             Object.keys(tasksByShop).sort().forEach(shopName => {
@@ -379,8 +389,6 @@
                     const timeString = `${hours}h ${minutes}m`;
                     const quantityText = task.quantity ? ` (${task.quantity} orders)` : '';
                     const reportTaskName = task.rawTaskName || task.name.replace(` [${shopName}]`, '');
-                    
-                    // Agregamos el prefijo aquí
                     formattedReport.push(`${taskPrefix}${reportTaskName}${quantityText}: ${timeString}`);
                 });
             });
@@ -423,13 +431,18 @@
             return [state, setState];
         };
 
-        const useThemeManager = (birthdays) => {
+        const useThemeManager = (birthdays, pastReports) => {
+            const [manualTheme, setManualTheme] = usePersistentState('manualTheme', null);
+            
             const getBirthdayPerson = useCallback((birthdays) => {
                 const today = new Date();
                 const todayFormatted = `${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
                 const found = birthdays.find(b => b.date === todayFormatted);
                 return found ? found.name : null;
             }, []);
+
+            const weeklyHoursWorked = useMemo(() => getWeeklyHours(pastReports), [pastReports]);
+            const isUnlocked = weeklyHoursWorked >= LOFI_UNLOCK_HOURS;
 
             const themeData = useMemo(() => {
                 const today = new Date();
@@ -440,23 +453,22 @@
                 let themeKey = 'default';
                 let message = '';
                 
-                if (birthdayPerson) {
-                    if (birthdayPerson === "Bianca") {
-                        themeKey = 'biancaBday';
-                        message = `¡Feliz Cumpleaños Bianca! 🦄🐱`;
-                    } else {
-                        themeKey = 'party';
-                        message = `¡Feliz Cumpleaños ${birthdayPerson}! 🎉`;
-                    }
-                } 
-                // Lógica de San Valentín: Solo del 13 al 15 de Febrero
-                else if (month === 2 && day >= 13 && day <= 15) { themeKey = 'valentines'; message = '¡Feliz San Valentín!'; }
-                else if (month === 10) { themeKey = 'halloween'; message = '¡Feliz Halloween!'; } 
-                else if (month === 12) { themeKey = 'christmas'; message = '¡Feliz Navidad!'; }
+                if (manualTheme && isUnlocked && THEME_STRATEGIES[manualTheme]) {
+                    themeKey = manualTheme;
+                    message = `${manualTheme === 'lofi' ? 'Modo LofiDex' : manualTheme === 'crimson' ? 'Modo Carmesí' : 'Modo Neón'} Activado`;
+                } else {
+                    if (birthdayPerson) {
+                        if (birthdayPerson === "Bianca") { themeKey = 'biancaBday'; message = `¡Feliz Cumpleaños Bianca! 🦄🐱`; } 
+                        else { themeKey = 'party'; message = `¡Feliz Cumpleaños ${birthdayPerson}! 🎉`; }
+                    } 
+                    else if (month === 2 && day >= 13 && day <= 15) { themeKey = 'valentines'; message = '¡Feliz San Valentín!'; }
+                    else if (month === 10) { themeKey = 'halloween'; message = '¡Feliz Halloween!'; } 
+                    else if (month === 12) { themeKey = 'christmas'; message = '¡Feliz Navidad!'; }
+                }
                 
                 const strategy = THEME_STRATEGIES[themeKey] || THEME_STRATEGIES.default;
-                return { strategy, message };
-            }, [birthdays, getBirthdayPerson]);
+                return { strategy, message, isUnlocked, weeklyHoursWorked, setManualTheme };
+            }, [birthdays, getBirthdayPerson, manualTheme, isUnlocked, weeklyHoursWorked, setManualTheme]);
             
             return themeData;
         };
@@ -475,11 +487,7 @@
                         if (isNaN(t.elapsedTime) || isNaN(timeDiff)) {
                             return { ...t, running: false, elapsedTime: 0, lastTime: null };
                         }
-                        return { 
-                            ...t, 
-                            elapsedTime: t.elapsedTime + timeDiff, 
-                            lastTime: now 
-                        };
+                        return { ...t, elapsedTime: t.elapsedTime + timeDiff, lastTime: now };
                     }));
                 }, 1000);
                 return () => clearInterval(interval);
@@ -489,15 +497,9 @@
                 const { shopInput, taskName, orderQuantity } = taskData;
                 if (!shopInput || !taskName) { setErrorMessage('Completa todos los campos.'); return false; }
                 const fullTaskName = `${taskName} [${shopInput}]`;
-                if (tasks.some(t => t.name.toLowerCase() === fullTaskName.toLowerCase())) { 
-                    setErrorMessage(`La tarea "${fullTaskName}" ya existe.`); 
-                    return false; 
-                }
+                if (tasks.some(t => t.name.toLowerCase() === fullTaskName.toLowerCase())) { setErrorMessage(`La tarea "${fullTaskName}" ya existe.`); return false; }
                 
-                const isCommon = commonTaskOptions.includes(taskName);
-                const isSpecific = Object.values(shopSpecificCallTasks).includes(taskName);
-                const isCustom = !isCommon && !isSpecific;
-
+                const isCustom = !commonTaskOptions.includes(taskName) && !Object.values(shopSpecificCallTasks).includes(taskName);
                 const newTask = { id: Date.now() + Math.random(), name: fullTaskName, rawTaskName: taskName, shop: shopInput, quantity: orderQuantity ? parseInt(orderQuantity) : null, elapsedTime: 0, running: false, lastTime: null, isCustom };
                 setTasks(prev => [...prev, newTask]);
                 setErrorMessage('');
@@ -543,9 +545,7 @@
             const resumeStoppedTimers = useCallback(() => { if (!statusMessage || statusMessage.taskIdToResume === null) return; toggleTimer(statusMessage.taskIdToResume); setStatusMessage(null); }, [statusMessage, toggleTimer]);
             const clearStatusMessage = useCallback(() => { setStatusMessage(null); }, []);
             
-            const resetTaskTimer = useCallback((id) => {
-                setTasks(prev => prev.map(t => t.id === id ? { ...t, elapsedTime: 0, running: false, lastTime: null, quantity: null } : t));
-            }, [setTasks]);
+            const resetTaskTimer = useCallback((id) => { setTasks(prev => prev.map(t => t.id === id ? { ...t, elapsedTime: 0, running: false, lastTime: null, quantity: null } : t)); }, [setTasks]);
             
             const updateTaskDetails = useCallback((id, newDetails) => {
                 setTasks(prev => prev.map(t => {
@@ -600,14 +600,66 @@
         const Title = ({ themeClasses, celebrationMessage }) => { 
             const shadowStyle = themeClasses.name === 'halloween' ? '[text-shadow:0_0_8px_rgba(255,165,0,0.6)]' : themeClasses.name === 'party' ? '[text-shadow:0_0_10px_rgba(217,70,239,0.7)]' : themeClasses.name === 'biancaBday' ? '[text-shadow:0_0_12px_rgba(236,72,153,0.6)]' : '';
             const [leftIcon, rightIcon] = themeClasses.iconPair || [null, null];
+            const isLofiDex = themeClasses.name === 'lofi';
+
             return (
-                <div className="text-center mb-4">
+                <div className="text-center mb-4 flex flex-col items-center">
+                    {/* LOGO PRINCIPAL - IMAGEN ÚNICA (0YBh5gg) RELLENANDO CÍRCULO */}
+                    {isLofiDex && (
+                        <div className="mb-2 animate-bounce-slow">
+                            <img src="https://i.imgur.com/0YBh5gg.png" alt="LofiDex Logo" className="w-32 h-32 object-cover rounded-full border-4 border-[#C084FC] shadow-lg hover:scale-105 transition-transform duration-500" 
+                                 onError={(e) => {e.target.onerror = null; e.target.style.display = 'none';}} />
+                        </div>
+                    )}
+
                     <h1 className={`text-4xl font-extrabold transition-colors duration-500 ${themeClasses.primaryText} ${themeClasses.titleFont} ${shadowStyle}`}>
                         {leftIcon && <span className="inline-block transform -rotate-12 scale-110 mr-2 text-3xl">{leftIcon}</span>}
-                        Task Manager TL
+                        {isLofiDex ? "Task Manager" : "Task Manager TL"}
                         {rightIcon && <span className="inline-block transform rotate-12 scale-110 ml-2 text-3xl">{rightIcon}</span>}
                     </h1>
+                    
+                    {/* Badge Powered by LofiDex */}
+                    {isLofiDex && (
+                        <div className="mt-2 bg-[#FDFCDC] text-[#2E1065] px-3 py-1 rounded-full text-xs font-bold font-lofidex tracking-widest uppercase border border-[#C084FC] shadow-md flex items-center gap-1 animate-pulse">
+                            <span>✨ Powered by LofiDex ✨</span>
+                        </div>
+                    )}
+
                     {celebrationMessage && <p className={`mt-2 text-lg font-semibold animate-pulse ${themeClasses.accentText}`}>{celebrationMessage}</p>}
+                </div>
+            );
+        };
+
+        const ThemeSelectorWidget = ({ isUnlocked, weeklyHours, setManualTheme, currentThemeName }) => {
+            const progress = Math.min((weeklyHours / LOFI_UNLOCK_HOURS) * 100, 100);
+            
+            if (isUnlocked) {
+                return (
+                    <div className="mb-4 w-full bg-gray-900/80 rounded-xl p-3 border border-gray-700 backdrop-blur-md">
+                        <div className="text-xs text-center text-gray-300 mb-2 font-bold uppercase tracking-wider flex items-center justify-center gap-2">
+                            <span>✨ Recompensas Desbloqueadas ✨</span>
+                            <span className="bg-[#C084FC] text-white text-[10px] px-1 rounded">Powered by LofiDex</span>
+                        </div>
+                        <div className="grid grid-cols-4 gap-2">
+                            <button onClick={() => setManualTheme(null)} className={`text-xs p-2 rounded-lg border-2 transition-all ${currentThemeName === 'default' ? 'bg-blue-600 border-white text-white' : 'bg-gray-800 border-gray-600 text-gray-400 hover:bg-gray-700'}`}>Default</button>
+                            <button onClick={() => setManualTheme('lofi')} className={`text-xs p-2 rounded-lg border-2 transition-all ${currentThemeName === 'lofi' ? 'bg-indigo-900 border-indigo-400 text-indigo-200' : 'bg-gray-800 border-indigo-900 text-indigo-300 hover:bg-indigo-900/50'}`}>🎧 LofiDex</button>
+                            <button onClick={() => setManualTheme('crimson')} className={`text-xs p-2 rounded-lg border-2 transition-all ${currentThemeName === 'crimson' ? 'bg-red-800 border-red-500 text-white' : 'bg-gray-800 border-red-900 text-red-400 hover:bg-red-900/30'}`}>🔴 Rojo</button>
+                            <button onClick={() => setManualTheme('neon')} className={`text-xs p-2 rounded-lg border-2 transition-all ${currentThemeName === 'neon' ? 'bg-black border-green-400 text-green-400' : 'bg-gray-800 border-green-900 text-green-700 hover:bg-black hover:text-green-600'}`}>🟢 Neón</button>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="mb-4 w-full bg-gray-800 rounded-lg p-3 border border-gray-700 relative overflow-hidden group">
+                    <div className="flex justify-between text-xs text-gray-400 mb-1 relative z-10">
+                        <span className="font-semibold">Meta Semanal (Modo LofiDex)</span>
+                        <span className="font-mono">{weeklyHours.toFixed(1)} / {LOFI_UNLOCK_HOURS} hrs</span>
+                    </div>
+                    <div className="w-full bg-gray-700 rounded-full h-2.5 overflow-hidden relative z-10">
+                        <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 h-2.5 rounded-full transition-all duration-1000" style={{ width: `${progress}%` }}></div>
+                    </div>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-all duration-1000"></div>
                 </div>
             );
         };
@@ -1087,11 +1139,14 @@
 
         // #region MAIN APP LOGIC
         const App = () => {
-            const { strategy, message } = useThemeManager(birthdaysList);
+            // Estado persistente para los reportes
+            const [pastReports, setPastReports] = usePersistentState('reports', []);
+            
+            // Pasamos pastReports al hook del tema para calcular desbloqueos
+            const { strategy, message, isUnlocked, weeklyHoursWorked, setManualTheme } = useThemeManager(birthdaysList, pastReports);
             const themeClasses = strategy;
 
             const { tasks, errorMessage, setErrorMessage, addTask, deleteTask, deleteAllTasks, toggleTimer, updateTaskDetails, sortTasksByShop, resetTaskTimer, stopAllTimers, statusMessage, resumeStoppedTimers, clearStatusMessage, syncTasksTime } = useTasks();
-            const [pastReports, setPastReports] = usePersistentState('reports', []);
             const [reportOutput, setReportOutput] = useState('');
             const [calendarSelectedDate, setCalendarSelectedDate] = useState(getTodayID());
             const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -1126,6 +1181,9 @@
             return (
                 <>
                     <GlobalStatusMessage message={statusMessage} resumeAction={resumeStoppedTimers} dismissAction={clearStatusMessage} />
+                    
+                    {themeClasses.name === 'lofi' && <BackgroundAudio />}
+
                     <ReportConfigModal isOpen={isReportModalOpen} onClose={() => setIsReportModalOpen(false)} onGenerate={confirmGenerateReport} tasks={tasks} syncTasksTime={syncTasksTime} themeClasses={themeClasses} selectedReportDate={selectedReportDate} setSelectedReportDate={setSelectedReportDate} pastReports={pastReports} />
                     <SalaryCalculatorModal isOpen={isSalaryModalOpen} onClose={() => setIsSalaryModalOpen(false)} pastReports={pastReports} hourlyRate={hourlyRate} setHourlyRate={setHourlyRate} themeClasses={themeClasses} />
                     <DeleteAllConfirmationModal isOpen={isDeleteAllModalOpen} onClose={() => setIsDeleteAllModalOpen(false)} onConfirm={() => { deleteAllTasks(); setIsDeleteAllModalOpen(false); }} themeClasses={themeClasses} />
@@ -1135,6 +1193,14 @@
                         {themeClasses.activeEffects.includes('spiderweb') && <SpiderWeb />}
                         <div className="relative space-y-6"> 
                             <Title themeClasses={themeClasses} celebrationMessage={message} />
+                            
+                            <ThemeSelectorWidget 
+                                isUnlocked={isUnlocked} 
+                                weeklyHours={weeklyHoursWorked} 
+                                setManualTheme={setManualTheme} 
+                                currentThemeName={themeClasses.name} 
+                            />
+
                             <TaskInputForm {...{ addTask, errorMessage, setErrorMessage, themeClasses }} />
                             <div className="space-y-4">
                                 <hr className={`border-t ${themeClasses.inputBorder}`} />
@@ -1165,7 +1231,9 @@
         };
         
         const ThemeWrapper = () => {
-            const { strategy } = useThemeManager(birthdaysList);
+            const [pastReports] = usePersistentState('reports', []);
+            const { strategy } = useThemeManager(birthdaysList, pastReports);
+            
             return (
                 <>
                     {strategy.activeEffects.map(effectKey => {
